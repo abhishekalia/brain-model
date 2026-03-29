@@ -41,6 +41,6 @@ async def join_waitlist(request: WaitlistRequest):
         response = await client.post(url, headers=headers, json=payload)
 
     if response.status_code not in (200, 201):
-        raise HTTPException(status_code=500, detail="Failed to save email")
+        raise HTTPException(status_code=500, detail=f"Airtable error {response.status_code}: {response.text}")
 
     return {"success": True}
