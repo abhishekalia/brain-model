@@ -31,7 +31,7 @@ async def join_waitlist(request: WaitlistRequest):
             {
                 "fields": {
                     "Email": request.email,
-                    "Joined": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+                    "Join Date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
                 }
             }
         ]
