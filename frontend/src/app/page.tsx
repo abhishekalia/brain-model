@@ -1,7 +1,67 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import InputPanel from '@/components/InputPanel';
+import ResultsPanel from '@/components/ResultsPanel';
+import { analyzeContent } from '@/lib/api';
+import { AnalyzeResponse } from '@/types';
 
-export default function Home() {
+const BrainViewer = dynamic(() => import('@/components/BrainViewer'), { ssr: false });
+
+function AppTool() {
+  const [results, setResults] = useState<AnalyzeResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleAnalyze = async (inputType: 'youtube' | 'text', content: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await analyzeContent({ input_type: inputType, content });
+      setResults(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Analysis failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-navy">
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-bold text-white mb-4">
+            Brain <span className="text-blue-400">Trigger</span>
+          </h1>
+          <p className="text-gray-400 text-xl">
+            Know which emotions your content triggers — before you spend a dollar on ads
+          </p>
+        </div>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-900/20 border border-red-800 rounded-lg text-red-400 text-center">
+            {error}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1 space-y-6">
+            <InputPanel onAnalyze={handleAnalyze} isLoading={isLoading} />
+          </div>
+          <div className="lg:col-span-1">
+            <BrainViewer regions={results?.regions ?? []} />
+          </div>
+          <div className="lg:col-span-1">
+            <ResultsPanel results={results} />
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function WaitlistPage() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
@@ -30,7 +90,6 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-navy flex flex-col">
-      {/* Nav */}
       <nav className="px-8 py-6 flex items-center justify-between border-b border-gray-800">
         <div className="text-white font-bold text-xl">
           Brain <span className="text-blue-400">Trigger</span>
@@ -40,7 +99,6 @@ export default function Home() {
         </span>
       </nav>
 
-      {/* Hero */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
         <div className="max-w-3xl mx-auto">
           <div className="inline-block text-xs text-blue-400 bg-blue-400/10 border border-blue-400/20 px-4 py-2 rounded-full mb-8 tracking-widest uppercase">
@@ -60,7 +118,6 @@ export default function Home() {
             Used by performance marketers and creators to A/B test content before launch.
           </p>
 
-          {/* Waitlist Form */}
           {status === 'success' ? (
             <div className="bg-blue-900/20 border border-blue-700 rounded-2xl px-8 py-6 max-w-md mx-auto">
               <div className="text-3xl mb-3">🧠</div>
@@ -87,14 +144,10 @@ export default function Home() {
             </form>
           )}
 
-          {errorMsg && (
-            <p className="text-red-400 text-sm mt-3">{errorMsg}</p>
-          )}
-
+          {errorMsg && <p className="text-red-400 text-sm mt-3">{errorMsg}</p>}
           <p className="text-gray-600 text-xs mt-4">No spam. Unsubscribe anytime.</p>
         </div>
 
-        {/* Feature hints */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mt-20 w-full">
           {[
             { icon: '🎯', title: 'Predict Ad Performance', desc: 'See emotional triggers before launch — not after wasting budget.' },
@@ -114,5 +167,21 @@ export default function Home() {
         © 2026 Brain Trigger. All rights reserved.
       </footer>
     </main>
+  );
+}
+
+function HomeInner() {
+  const searchParams = useSearchParams();
+  const isPreview = searchParams.get('preview') === 'true';
+
+  if (isPreview) return <AppTool />;
+  return <WaitlistPage />;
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <HomeInner />
+    </Suspense>
   );
 }
