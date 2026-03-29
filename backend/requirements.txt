@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+anthropic
+yt-dlp
+python-dotenv
+pydantic
+httpx
