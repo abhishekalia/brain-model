@@ -1,5 +1,6 @@
 'use client';
 import { AnalyzeResponse } from '@/types';
+import Recommendations from './Recommendations';
 
 interface ResultsPanelProps {
   results: AnalyzeResponse | null;
@@ -136,6 +137,8 @@ export default function ResultsPanel({ results }: ResultsPanelProps) {
           ))}
         </div>
       </div>
+
+      <Recommendations recommendations={results.recommendations} />
     </div>
   );
 }

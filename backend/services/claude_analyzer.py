@@ -2,7 +2,7 @@ import json
 import os
 import anthropic
 from dotenv import load_dotenv
-from models.schemas import AnalyzeResponse, BrainRegion, BrainNetwork
+from models.schemas import AnalyzeResponse, BrainRegion, BrainNetwork, Recommendation
 
 load_dotenv()
 
@@ -30,6 +30,23 @@ For what_works: list 3-5 specific, concrete things the content does neurological
 For what_doesnt_work: list 3-5 specific weaknesses or missing elements. Each item should be one sentence explaining the problem and its marketing consequence (e.g. "Lacks a clear call-to-action trigger — the amygdala never fires, so viewers won't feel compelled to act.").
 
 For content_summary: write exactly 2 short sentences describing what this content is about in plain English. No marketing jargon.
+
+For recommendations: provide 3-5 specific, actionable recommendations ranked by priority (High/Medium/Low). Each recommendation must:
+- Target a specific underperforming brain region (score < 70)
+- Give a concrete, specific action the creator can take (not vague advice)
+- Explain the neuroscience reason in plain English
+- Give a real-world example of how to implement it
+
+Example of a good recommendation:
+{
+  "priority": "High",
+  "region": "Amygdala",
+  "action": "Add urgency in the first 5 seconds",
+  "reason": "The amygdala — your brain's alarm system — isn't firing, meaning viewers feel no urgency to act. Without this, conversion rates drop significantly.",
+  "example": "Open with 'Only 3 spots left' or show a countdown timer, or start with a surprising statistic that creates immediate tension."
+}
+
+Bad recommendations say things like "improve your visuals" — good ones say exactly what to add, change, or remove.
 
 Return ONLY valid JSON in this exact format:
 {
@@ -61,6 +78,15 @@ Return ONLY valid JSON in this exact format:
     "Lacks urgency triggers — the amygdala score is low, meaning viewers won't feel compelled to act immediately.",
     "Weak scene context — viewers aren't transported anywhere, reducing immersion.",
     "No empathy hook — content doesn't make viewers see themselves in the story."
+  ],
+  "recommendations": [
+    {
+      "priority": "High",
+      "region": "Amygdala",
+      "action": "Add urgency in the first 5 seconds",
+      "reason": "The amygdala isn't firing — viewers feel no urgency to act.",
+      "example": "Open with a surprising stat, countdown timer, or scarcity signal."
+    }
   ]
 }"""
 
@@ -83,6 +109,8 @@ async def analyze_with_claude(content: str) -> AnalyzeResponse:
 
     regions = [BrainRegion(**r) for r in data["regions"]]
     networks = [BrainNetwork(**n) for n in data["networks"]]
+    recommendations_data = data.get("recommendations", [])
+    recommendations = [Recommendation(**r) for r in recommendations_data]
 
     return AnalyzeResponse(
         regions=regions,
@@ -92,4 +120,5 @@ async def analyze_with_claude(content: str) -> AnalyzeResponse:
         content_summary=data["content_summary"],
         what_works=data["what_works"],
         what_doesnt_work=data["what_doesnt_work"],
+        recommendations=recommendations,
     )

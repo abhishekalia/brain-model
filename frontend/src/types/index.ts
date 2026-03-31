@@ -12,6 +12,14 @@ export interface BrainNetwork {
   description: string;
 }
 
+export interface Recommendation {
+  priority: 'High' | 'Medium' | 'Low';
+  region: string;
+  action: string;
+  reason: string;
+  example: string;
+}
+
 export interface AnalyzeResponse {
   regions: BrainRegion[];
   networks: BrainNetwork[];
@@ -20,6 +28,7 @@ export interface AnalyzeResponse {
   content_summary: string;
   what_works: string[];
   what_doesnt_work: string[];
+  recommendations: Recommendation[];
 }
 
 export interface AnalyzeRequest {
