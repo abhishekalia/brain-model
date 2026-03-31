@@ -4,13 +4,17 @@ import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import InputPanel from '@/components/InputPanel';
 import ResultsPanel from '@/components/ResultsPanel';
+import ABComparison from '@/components/ABComparison';
+import ABResults from '@/components/ABResults';
 import { analyzeContent } from '@/lib/api';
 import { AnalyzeResponse } from '@/types';
 
 const BrainViewer = dynamic(() => import('@/components/BrainViewer'), { ssr: false });
 
 function AppTool() {
+  const [tab, setTab] = useState<'single' | 'ab'>('single');
   const [results, setResults] = useState<AnalyzeResponse | null>(null);
+  const [abResults, setAbResults] = useState<{ a: AnalyzeResponse; b: AnalyzeResponse } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,13 +34,27 @@ function AppTool() {
   return (
     <main className="min-h-screen bg-navy">
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="text-center mb-12">
+        <div className="text-center mb-10">
           <h1 className="text-5xl font-bold text-white mb-4">
             Brain <span className="text-blue-400">Trigger</span>
           </h1>
-          <p className="text-gray-400 text-xl">
+          <p className="text-gray-400 text-xl mb-6">
             Know which emotions your content triggers — before you spend a dollar on ads
           </p>
+          <div className="inline-flex bg-gray-900 border border-gray-700 rounded-xl p-1">
+            <button
+              onClick={() => setTab('single')}
+              className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab === 'single' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+            >
+              Single Analysis
+            </button>
+            <button
+              onClick={() => setTab('ab')}
+              className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab === 'ab' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+            >
+              A/B Compare
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -45,17 +63,41 @@ function AppTool() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1 space-y-6">
-            <InputPanel onAnalyze={handleAnalyze} isLoading={isLoading} />
+        {tab === 'single' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
+              <InputPanel onAnalyze={handleAnalyze} isLoading={isLoading} />
+            </div>
+            <div className="lg:col-span-1">
+              <BrainViewer regions={results?.regions ?? []} />
+            </div>
+            <div className="lg:col-span-1">
+              <ResultsPanel results={results} />
+            </div>
           </div>
-          <div className="lg:col-span-1">
-            <BrainViewer regions={results?.regions ?? []} />
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
+              <ABComparison
+                onResults={(a, b) => setAbResults({ a, b })}
+                isLoading={isLoading}
+                setIsLoading={setIsLoading}
+              />
+            </div>
+            <div className="lg:col-span-1">
+              <BrainViewer regions={abResults?.a.regions ?? []} label="Version A" />
+            </div>
+            <div className="lg:col-span-1">
+              {abResults ? (
+                <ABResults resultA={abResults.a} resultB={abResults.b} />
+              ) : (
+                <div className="bg-navy-light rounded-2xl p-6 border border-gray-800 flex items-center justify-center h-64">
+                  <p className="text-gray-500 text-center text-sm">A/B results will appear here</p>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="lg:col-span-1">
-            <ResultsPanel results={results} />
-          </div>
-        </div>
+        )}
       </div>
     </main>
   );

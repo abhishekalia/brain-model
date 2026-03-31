@@ -19,7 +19,7 @@ async def extract_youtube_content(url: str) -> str:
 
     parts = []
 
-    # Use oEmbed API for title and author (no auth needed)
+    # Get title and channel via oEmbed
     async with httpx.AsyncClient() as client:
         try:
             oembed = await client.get(
@@ -36,8 +36,17 @@ async def extract_youtube_content(url: str) -> str:
         except Exception:
             pass
 
+    # Get transcript
+    try:
+        from youtube_transcript_api import YouTubeTranscriptApi
+        transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=['en', 'en-US', 'en-GB'])
+        transcript_text = ' '.join([entry['text'] for entry in transcript_list])
+        if transcript_text:
+            parts.append(f"Transcript:\n{transcript_text[:3000]}")
+    except Exception:
+        pass
+
     if not parts:
         parts.append(f"YouTube video ID: {video_id}")
 
-    parts.append(f"URL: {url}")
     return '\n\n'.join(parts)
