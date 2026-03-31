@@ -22,3 +22,11 @@ body {
   background: #C8BFB5;
   border-radius: 2px;
 }
+
+html, body, #__next {
+  height: 100%;
+}
+
+.brain-viewer-full {
+  height: calc(100vh - 57px);
+}

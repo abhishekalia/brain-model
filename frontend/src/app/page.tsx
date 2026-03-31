@@ -32,74 +32,100 @@ function AppTool() {
   };
 
   return (
-    <main className="min-h-screen bg-cream">
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="text-center mb-10">
-          <h1 className="text-5xl font-bold text-text-primary mb-4">
-            Brain <span className="text-accent">Trigger</span>
-          </h1>
-          <p className="text-text-secondary text-xl mb-6">
-            Know which emotions your content triggers — before you spend a dollar on ads
-          </p>
-          <div className="inline-flex bg-cream-dark border border-border rounded-xl p-1">
-            <button
-              onClick={() => setTab('single')}
-              className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'single' ? 'bg-white shadow-sm text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}
-            >
-              Single Analysis
-            </button>
-            <button
-              onClick={() => setTab('ab')}
-              className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'ab' ? 'bg-white shadow-sm text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}
-            >
-              A/B Compare
-            </button>
-          </div>
+    <div className="min-h-screen bg-cream flex flex-col">
+      {/* Nav */}
+      <nav className="px-8 py-4 flex items-center justify-between border-b border-border bg-cream/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="text-text-primary font-bold text-lg tracking-tight">
+          Brain <span className="text-accent">Trigger</span>
         </div>
+        <div className="flex bg-cream-dark border border-border rounded-xl p-0.5">
+          {(['single', 'ab'] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                tab === t ? 'bg-white shadow-sm text-text-primary' : 'text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              {t === 'single' ? 'Single Analysis' : 'A/B Compare'}
+            </button>
+          ))}
+        </div>
+        <div className="w-32" /> {/* spacer */}
+      </nav>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-center text-sm">
-            {error}
-          </div>
-        )}
-
-        {tab === 'single' ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1">
-              <InputPanel onAnalyze={handleAnalyze} isLoading={isLoading} />
-            </div>
-            <div className="lg:col-span-1">
+      {/* Main layout */}
+      {tab === 'single' ? (
+        <div className="flex flex-1 overflow-hidden">
+          {/* LEFT: Brain hero */}
+          <div className="w-1/2 border-r border-border relative flex flex-col">
+            <div className="flex-1">
               <BrainViewer regions={results?.regions ?? []} />
             </div>
-            <div className="lg:col-span-1">
+            <div className="px-8 pb-6 pt-4 border-t border-border">
+              <p className="text-xs text-text-secondary/60 uppercase tracking-widest font-medium">Hover regions to explore · Drag to rotate</p>
+            </div>
+          </div>
+
+          {/* RIGHT: Input + Results */}
+          <div className="w-1/2 flex flex-col overflow-y-auto">
+            <div className="p-8 border-b border-border">
+              <h1 className="text-3xl font-bold text-text-primary tracking-tight mb-1">
+                Brain <span className="text-accent">Trigger</span>
+              </h1>
+              <p className="text-text-secondary text-sm mb-6">
+                Know which emotions your content triggers — before you spend a dollar on ads
+              </p>
+              <InputPanel onAnalyze={handleAnalyze} isLoading={isLoading} />
+              {error && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+                  {error}
+                </div>
+              )}
+            </div>
+            <div className="p-8">
               <ResultsPanel results={results} />
             </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1">
+        </div>
+      ) : (
+        <div className="flex flex-1 overflow-hidden">
+          {/* LEFT: Two brains */}
+          <div className="w-1/2 border-r border-border grid grid-rows-2">
+            <div className="border-b border-border">
+              <BrainViewer regions={abResults?.a.regions ?? []} label="Version A" />
+            </div>
+            <div>
+              <BrainViewer regions={abResults?.b.regions ?? []} label="Version B" />
+            </div>
+          </div>
+
+          {/* RIGHT: AB Input + Results */}
+          <div className="w-1/2 flex flex-col overflow-y-auto">
+            <div className="p-8 border-b border-border">
+              <h1 className="text-3xl font-bold text-text-primary tracking-tight mb-1">
+                A/B <span className="text-accent">Compare</span>
+              </h1>
+              <p className="text-text-secondary text-sm mb-6">Compare two pieces of content to find the winner</p>
               <ABComparison
                 onResults={(a, b) => setAbResults({ a, b })}
                 isLoading={isLoading}
                 setIsLoading={setIsLoading}
               />
             </div>
-            <div className="lg:col-span-1">
-              <BrainViewer regions={abResults?.a.regions ?? []} label="Version A" />
-            </div>
-            <div className="lg:col-span-1">
+            <div className="p-8">
               {abResults ? (
                 <ABResults resultA={abResults.a} resultB={abResults.b} />
               ) : (
-                <div className="bg-white border border-border rounded-2xl p-6 shadow-sm flex items-center justify-center h-64">
-                  <p className="text-text-secondary text-center text-sm">A/B results will appear here</p>
+                <div className="flex items-center justify-center h-40">
+                  <p className="text-text-secondary/50 text-sm">Results will appear here</p>
                 </div>
               )}
             </div>
           </div>
-        )}
-      </div>
-    </main>
+        </div>
+      )}
+    </div>
   );
 }
 
