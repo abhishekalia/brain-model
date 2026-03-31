@@ -2,14 +2,14 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Brain Trigger — See How Your Content Activates the Brain',
-  description: 'AI-powered neuroscience analysis of marketing content',
+  title: 'Brain Trigger — Know What Your Content Triggers',
+  description: 'Neuroscience-powered marketing analysis',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="bg-cream text-text-primary antialiased">{children}</body>
     </html>
   );
 }

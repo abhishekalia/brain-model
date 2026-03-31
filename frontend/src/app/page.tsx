@@ -32,25 +32,25 @@ function AppTool() {
   };
 
   return (
-    <main className="min-h-screen bg-navy">
+    <main className="min-h-screen bg-cream">
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="text-center mb-10">
-          <h1 className="text-5xl font-bold text-white mb-4">
-            Brain <span className="text-blue-400">Trigger</span>
+          <h1 className="text-5xl font-bold text-text-primary mb-4">
+            Brain <span className="text-accent">Trigger</span>
           </h1>
-          <p className="text-gray-400 text-xl mb-6">
+          <p className="text-text-secondary text-xl mb-6">
             Know which emotions your content triggers — before you spend a dollar on ads
           </p>
-          <div className="inline-flex bg-gray-900 border border-gray-700 rounded-xl p-1">
+          <div className="inline-flex bg-cream-dark border border-border rounded-xl p-1">
             <button
               onClick={() => setTab('single')}
-              className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab === 'single' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+              className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'single' ? 'bg-white shadow-sm text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}
             >
               Single Analysis
             </button>
             <button
               onClick={() => setTab('ab')}
-              className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab === 'ab' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+              className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'ab' ? 'bg-white shadow-sm text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}
             >
               A/B Compare
             </button>
@@ -58,7 +58,7 @@ function AppTool() {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-900/20 border border-red-800 rounded-lg text-red-400 text-center">
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-center text-sm">
             {error}
           </div>
         )}
@@ -91,8 +91,8 @@ function AppTool() {
               {abResults ? (
                 <ABResults resultA={abResults.a} resultB={abResults.b} />
               ) : (
-                <div className="bg-navy-light rounded-2xl p-6 border border-gray-800 flex items-center justify-center h-64">
-                  <p className="text-gray-500 text-center text-sm">A/B results will appear here</p>
+                <div className="bg-white border border-border rounded-2xl p-6 shadow-sm flex items-center justify-center h-64">
+                  <p className="text-text-secondary text-center text-sm">A/B results will appear here</p>
                 </div>
               )}
             </div>
@@ -113,14 +113,12 @@ function WaitlistPage() {
     if (!email.trim()) return;
     setStatus('loading');
     setErrorMsg('');
-
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/waitlist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-
       if (!res.ok) throw new Error('Failed to join');
       setStatus('success');
       setEmail('');
@@ -131,81 +129,79 @@ function WaitlistPage() {
   };
 
   return (
-    <main className="min-h-screen bg-navy flex flex-col">
-      <nav className="px-8 py-6 flex items-center justify-between border-b border-gray-800">
-        <div className="text-white font-bold text-xl">
-          Brain <span className="text-blue-400">Trigger</span>
+    <main className="min-h-screen bg-cream flex flex-col">
+      <nav className="px-8 py-5 flex items-center justify-between border-b border-border">
+        <div className="text-text-primary font-bold text-lg tracking-tight">
+          Brain <span className="text-accent">Trigger</span>
         </div>
-        <span className="text-xs text-blue-400 bg-blue-400/10 border border-blue-400/20 px-3 py-1 rounded-full">
+        <span className="text-xs text-accent bg-accent/10 border border-accent/20 px-3 py-1 rounded-full font-medium">
           Coming Soon
         </span>
       </nav>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-        <div className="max-w-3xl mx-auto">
-          <div className="inline-block text-xs text-blue-400 bg-blue-400/10 border border-blue-400/20 px-4 py-2 rounded-full mb-8 tracking-widest uppercase">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-20">
+        <div className="max-w-2xl mx-auto">
+          <div className="inline-block text-xs text-accent bg-accent/10 border border-accent/20 px-4 py-1.5 rounded-full mb-8 tracking-widest uppercase font-medium">
             Neuroscience-Powered Marketing
           </div>
 
-          <h1 className="text-6xl md:text-7xl font-bold text-white mb-6 leading-tight">
-            Know which emotions your content triggers —{' '}
-            <span className="text-blue-400">before you spend a dollar on ads</span>
+          <h1 className="text-5xl md:text-6xl font-bold text-text-primary mb-6 leading-tight tracking-tight">
+            Know which emotions<br />
+            <span className="text-accent">your content triggers</span>
           </h1>
 
-          <p className="text-gray-400 text-xl mb-4 leading-relaxed max-w-2xl mx-auto">
-            Brain Trigger analyzes your videos and ad copy using neuroscience to show exactly which brain regions activate — and what that means for clicks, conversions, and recall.
+          <p className="text-text-secondary text-lg mb-3 leading-relaxed max-w-xl mx-auto">
+            Brain Trigger analyzes your videos and ad copy to show exactly which brain regions activate — and what that means for clicks, conversions, and recall.
           </p>
 
-          <p className="text-gray-500 text-base mb-12">
+          <p className="text-text-secondary/60 text-sm mb-10">
             Used by performance marketers and creators to A/B test content before launch.
           </p>
 
           {status === 'success' ? (
-            <div className="bg-blue-900/20 border border-blue-700 rounded-2xl px-8 py-6 max-w-md mx-auto">
-              <div className="text-3xl mb-3">🧠</div>
-              <p className="text-white font-semibold text-lg">You're on the list.</p>
-              <p className="text-gray-400 text-sm mt-1">We'll reach out when early access opens.</p>
+            <div className="bg-white border border-border rounded-2xl px-8 py-6 max-w-sm mx-auto shadow-sm">
+              <p className="text-text-primary font-semibold text-base">You're on the list.</p>
+              <p className="text-text-secondary text-sm mt-1">We'll reach out when early access opens.</p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto w-full">
+            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto w-full">
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 required
-                className="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-5 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 text-base"
+                className="flex-1 bg-white border border-border rounded-xl px-5 py-3.5 text-text-primary placeholder-text-secondary/50 focus:outline-none focus:border-accent/40 text-sm shadow-sm"
               />
               <button
                 type="submit"
                 disabled={status === 'loading'}
-                className="bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold px-8 py-4 rounded-xl transition-colors whitespace-nowrap"
+                className="bg-text-primary hover:bg-text-primary/80 disabled:bg-border text-white font-medium px-7 py-3.5 rounded-xl transition-all text-sm whitespace-nowrap"
               >
                 {status === 'loading' ? 'Joining...' : 'Get Early Access'}
               </button>
             </form>
           )}
 
-          {errorMsg && <p className="text-red-400 text-sm mt-3">{errorMsg}</p>}
-          <p className="text-gray-600 text-xs mt-4">No spam. Unsubscribe anytime.</p>
+          {errorMsg && <p className="text-red-600 text-sm mt-3">{errorMsg}</p>}
+          <p className="text-text-secondary/40 text-xs mt-4">No spam. Unsubscribe anytime.</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mt-20 w-full">
           {[
-            { icon: '🎯', title: 'Predict Ad Performance', desc: 'See emotional triggers before launch — not after wasting budget.' },
-            { icon: '🧠', title: 'Real Neuroscience', desc: 'Powered by TRIBE v2 research and Claude AI for accurate brain mapping.' },
-            { icon: '⚡', title: 'A/B Test Content', desc: 'Compare two versions of your script or video to pick the stronger one.' },
+            { title: 'Predict Ad Performance', desc: 'See emotional triggers before launch — not after wasting budget.' },
+            { title: 'Real Neuroscience', desc: 'Powered by TRIBE v2 research and Claude AI for accurate brain mapping.' },
+            { title: 'A/B Test Content', desc: 'Compare two versions of your script or video to pick the stronger one.' },
           ].map((f) => (
-            <div key={f.title} className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 text-left">
-              <div className="text-2xl mb-3">{f.icon}</div>
-              <div className="text-white font-semibold mb-2">{f.title}</div>
-              <div className="text-gray-500 text-sm leading-relaxed">{f.desc}</div>
+            <div key={f.title} className="bg-white border border-border rounded-2xl p-6 text-left shadow-sm">
+              <div className="text-text-primary font-semibold text-sm mb-2">{f.title}</div>
+              <div className="text-text-secondary text-sm leading-relaxed">{f.desc}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <footer className="text-center text-gray-700 text-xs py-8">
+      <footer className="text-center text-text-secondary/40 text-xs py-8 border-t border-border">
         © 2026 Brain Trigger. All rights reserved.
       </footer>
     </main>

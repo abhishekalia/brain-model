@@ -1,8 +1,7 @@
 'use client';
 import { useRef, useState, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Html, Environment } from '@react-three/drei';
-import { EffectComposer, Bloom } from '@react-three/postprocessing';
+import { OrbitControls, useGLTF, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { BrainRegion } from '@/types';
 import { BRAIN_REGIONS } from '@/lib/brainRegions';
@@ -21,58 +20,51 @@ function Hotspot({ position, score, name, regionData, onHover, isHovered }: Hots
   const ringRef = useRef<THREE.Mesh>(null);
 
   const getColor = (s: number) => {
-    if (s >= 75) return '#ff3333';
-    if (s >= 50) return '#ffaa00';
-    if (s >= 25) return '#44aaff';
-    return '#1a3a5c';
+    if (s >= 75) return '#C4453A';
+    if (s >= 50) return '#E8A87C';
+    if (s >= 25) return '#A8C5DA';
+    return '#C8BFB5';
   };
 
-  const color = score > 0 ? getColor(score) : '#1a3a5c';
-  const intensity = score > 0 ? (score / 100) * 2 + 0.5 : 0.2;
-  const size = score > 0 ? 0.035 + (score / 100) * 0.025 : 0.025;
+  const color = score > 0 ? getColor(score) : '#C8BFB5';
+  const size = score > 0 ? 0.032 + (score / 100) * 0.022 : 0.022;
 
   useFrame((_, delta) => {
-    if (ringRef.current && score > 50) {
-      ringRef.current.scale.x += delta * 0.8;
-      ringRef.current.scale.y += delta * 0.8;
-      ringRef.current.scale.z += delta * 0.8;
-      const opacity = (ringRef.current.material as THREE.MeshBasicMaterial).opacity;
-      (ringRef.current.material as THREE.MeshBasicMaterial).opacity = Math.max(0, opacity - delta * 0.6);
-      if ((ringRef.current.material as THREE.MeshBasicMaterial).opacity <= 0) {
+    if (ringRef.current && score >= 50) {
+      ringRef.current.scale.x += delta * 1.2;
+      ringRef.current.scale.y += delta * 1.2;
+      ringRef.current.scale.z += delta * 1.2;
+      const mat = ringRef.current.material as THREE.MeshBasicMaterial;
+      mat.opacity = Math.max(0, mat.opacity - delta * 0.8);
+      if (mat.opacity <= 0) {
         ringRef.current.scale.set(1, 1, 1);
-        (ringRef.current.material as THREE.MeshBasicMaterial).opacity = 0.6;
+        mat.opacity = 0.5;
       }
     }
   });
 
   return (
     <group position={position}>
-      {/* Main hotspot sphere */}
-      <mesh
-        onPointerEnter={() => onHover(name)}
-        onPointerLeave={() => onHover(null)}
-      >
-        <sphereGeometry args={[isHovered ? size * 1.4 : size, 16, 16]} />
+      <mesh onPointerEnter={() => onHover(name)} onPointerLeave={() => onHover(null)}>
+        <sphereGeometry args={[isHovered ? size * 1.5 : size, 16, 16]} />
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={isHovered ? intensity * 2 : intensity}
-          roughness={0.2}
+          emissiveIntensity={isHovered ? 0.8 : 0.4}
+          roughness={0.3}
           metalness={0.1}
           transparent
-          opacity={score > 0 ? 0.95 : 0.4}
+          opacity={score > 0 ? 0.95 : 0.35}
         />
       </mesh>
 
-      {/* Pulse ring for high activation */}
       {score >= 50 && (
         <mesh ref={ringRef}>
-          <ringGeometry args={[size * 1.2, size * 1.6, 16]} />
-          <meshBasicMaterial color={color} transparent opacity={0.6} side={THREE.DoubleSide} />
+          <ringGeometry args={[size * 1.3, size * 1.7, 16]} />
+          <meshBasicMaterial color={color} transparent opacity={0.5} side={THREE.DoubleSide} />
         </mesh>
       )}
 
-      {/* Tooltip */}
       {isHovered && regionData && (
         <Html distanceFactor={5} style={{ pointerEvents: 'none' }}>
           <RegionTooltip
@@ -94,27 +86,22 @@ function BrainModel({ regions }: { regions: BrainRegion[] }) {
 
   useFrame((_, delta) => {
     if (groupRef.current && !hoveredRegion) {
-      groupRef.current.rotation.y += delta * 0.15;
+      groupRef.current.rotation.y += delta * 0.12;
     }
   });
 
-  // Apply realistic brain material to all meshes
   scene.traverse((child) => {
     if ((child as THREE.Mesh).isMesh) {
-      const mesh = child as THREE.Mesh;
-      mesh.material = new THREE.MeshStandardMaterial({
-        color: new THREE.Color('#c68b7a'),
-        roughness: 0.75,
-        metalness: 0.05,
-        envMapIntensity: 0.4,
+      (child as THREE.Mesh).material = new THREE.MeshStandardMaterial({
+        color: new THREE.Color('#D4A090'),
+        roughness: 0.8,
+        metalness: 0.0,
+        envMapIntensity: 0.3,
       });
     }
   });
 
-  const getRegionScore = (name: string) => {
-    const region = regions.find((r) => r.name === name);
-    return region ? region.score : 0;
-  };
+  const getRegionScore = (name: string) => regions.find((r) => r.name === name)?.score ?? 0;
 
   return (
     <group ref={groupRef}>
@@ -135,53 +122,45 @@ function BrainModel({ regions }: { regions: BrainRegion[] }) {
 }
 
 export default function BrainViewer({ regions, label }: { regions: BrainRegion[]; label?: string }) {
-  const hasActivation = regions.length > 0;
-
   return (
-    <div className="relative bg-gray-950 rounded-2xl border border-gray-800 overflow-hidden" style={{ height: '500px' }}>
+    <div className="relative bg-white border border-border rounded-2xl shadow-sm overflow-hidden" style={{ height: '480px' }}>
       {label && (
-        <div className="absolute top-4 left-4 z-10 text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-900/80 px-2 py-1 rounded">
+        <div className="absolute top-4 left-4 z-10 text-xs font-semibold text-text-secondary uppercase tracking-widest bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-border">
           {label}
         </div>
       )}
       <Canvas camera={{ position: [0, 0.5, 3.5], fov: 45 }}>
-        <color attach="background" args={['#050810']} />
-        <ambientLight intensity={0.3} />
-        <hemisphereLight args={['#ffd4b8', '#1a1a3e', 0.6]} />
-        <pointLight position={[3, 3, 3]} intensity={1.2} color="#ffffff" />
-        <pointLight position={[-3, -1, -2]} intensity={0.5} color="#4488ff" />
-        <pointLight position={[0, -3, 1]} intensity={0.3} color="#ff8844" />
+        <color attach="background" args={['#FFFFFF']} />
+        <ambientLight intensity={1.2} />
+        <hemisphereLight args={['#FFF5EE', '#E8DDD5', 1.0]} />
+        <directionalLight position={[5, 5, 5]} intensity={0.8} color="#FFF8F0" />
+        <directionalLight position={[-3, 2, -3]} intensity={0.4} color="#E8F0FF" />
+        <pointLight position={[0, -3, 2]} intensity={0.3} color="#FFE8D6" />
         <Suspense fallback={null}>
-          <Environment preset="night" />
           <BrainModel regions={regions} />
         </Suspense>
         <OrbitControls enablePan={false} minDistance={2.5} maxDistance={6} />
-        {hasActivation && (
-          <EffectComposer>
-            <Bloom luminanceThreshold={0.3} luminanceSmoothing={0.9} intensity={0.8} />
-          </EffectComposer>
-        )}
       </Canvas>
 
       {/* Legend */}
-      <div className="absolute bottom-4 left-4 flex items-center gap-3 text-xs text-gray-400">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-4 text-xs text-text-secondary bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full border border-border shadow-sm">
         <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-blue-400" />
+          <div className="w-2 h-2 rounded-full bg-[#A8C5DA]" />
           <span>Low</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+          <div className="w-2 h-2 rounded-full bg-[#E8A87C]" />
           <span>Medium</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+          <div className="w-2 h-2 rounded-full bg-[#C4453A]" />
           <span>High</span>
         </div>
       </div>
 
-      {!hasActivation && (
+      {regions.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <p className="text-gray-600 text-sm">Analyze content to see brain activation</p>
+          <p className="text-text-secondary/50 text-sm">Rotate to explore · Analyze to activate</p>
         </div>
       )}
     </div>

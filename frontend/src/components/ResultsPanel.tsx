@@ -6,20 +6,13 @@ interface ResultsPanelProps {
 }
 
 function ScoreBar({ score }: { score: number }) {
-  const getColor = (s: number) =>
-    s >= 75 ? 'from-orange-500 to-red-500' :
-    s >= 50 ? 'from-yellow-500 to-orange-400' :
-    'from-blue-600 to-cyan-500';
-
+  const color = score >= 75 ? '#C4453A' : score >= 50 ? '#E8A87C' : '#A8C5DA';
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 bg-gray-800 rounded-full h-1.5">
-        <div
-          className={`h-1.5 rounded-full bg-gradient-to-r ${getColor(score)} transition-all duration-700`}
-          style={{ width: `${score}%` }}
-        />
+      <div className="flex-1 bg-cream-dark rounded-full h-1">
+        <div className="h-1 rounded-full transition-all duration-700" style={{ width: `${score}%`, backgroundColor: color }} />
       </div>
-      <span className="text-white text-xs font-bold w-7 text-right">{score}</span>
+      <span className="text-text-primary text-xs font-medium w-6 text-right">{score}</span>
     </div>
   );
 }
@@ -27,72 +20,78 @@ function ScoreBar({ score }: { score: number }) {
 export default function ResultsPanel({ results }: ResultsPanelProps) {
   if (!results) {
     return (
-      <div className="bg-navy-light rounded-2xl p-6 border border-gray-800 flex items-center justify-center h-64">
-        <p className="text-gray-500 text-center text-sm">Results will appear here after analysis</p>
+      <div className="bg-white border border-border rounded-2xl p-8 shadow-sm flex flex-col items-center justify-center h-64 gap-3">
+        <div className="w-10 h-10 rounded-full bg-cream-dark flex items-center justify-center">
+          <svg className="w-5 h-5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+          </svg>
+        </div>
+        <p className="text-text-secondary text-sm text-center">Analyze content to see<br />brain activation results</p>
       </div>
     );
   }
 
-  const getScoreLabel = (s: number) => s >= 75 ? 'Strong' : s >= 50 ? 'Moderate' : 'Weak';
-  const getScoreBadgeColor = (s: number) =>
-    s >= 75 ? 'bg-red-900/30 text-red-400 border-red-800' :
-    s >= 50 ? 'bg-yellow-900/30 text-yellow-400 border-yellow-800' :
-    'bg-blue-900/30 text-blue-400 border-blue-800';
+  const getStrength = (s: number) => s >= 75 ? 'Strong' : s >= 50 ? 'Moderate' : 'Low';
+  const getEmotionStyle = (s: number) => s >= 75
+    ? 'bg-red-50 text-red-700 border-red-200'
+    : s >= 50
+    ? 'bg-orange-50 text-orange-700 border-orange-200'
+    : 'bg-blue-50 text-blue-600 border-blue-200';
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 max-h-[calc(100vh-200px)] overflow-y-auto pr-1">
       {/* Content summary */}
-      <div className="bg-gray-900/60 border border-gray-700 rounded-2xl p-4">
-        <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">About this content</div>
-        <p className="text-gray-300 text-sm leading-relaxed">{results.content_summary}</p>
+      <div className="bg-white border border-border rounded-2xl p-5 shadow-sm">
+        <p className="text-xs font-semibold text-text-secondary uppercase tracking-widest mb-2">About This Content</p>
+        <p className="text-text-primary text-sm leading-relaxed">{results.content_summary}</p>
       </div>
 
-      {/* Engagement score */}
-      <div className="bg-navy-light border border-gray-800 rounded-2xl p-4 flex items-center justify-between">
+      {/* Score */}
+      <div className="bg-white border border-border rounded-2xl p-5 shadow-sm flex items-center justify-between">
         <div>
-          <div className="text-gray-400 text-sm">Brain Engagement Score</div>
-          <div className="text-gray-500 text-xs mt-0.5">Overall neurological impact</div>
+          <p className="text-text-primary font-semibold text-sm">Brain Engagement Score</p>
+          <p className="text-text-secondary text-xs mt-0.5">Overall neurological impact</p>
         </div>
         <div className="text-right">
-          <div className="text-5xl font-bold text-white">{results.engagement_score}</div>
-          <div className="text-xs text-gray-500">/100</div>
+          <span className="text-5xl font-bold text-text-primary">{results.engagement_score}</span>
+          <span className="text-text-secondary text-xs ml-1">/100</span>
         </div>
       </div>
 
-      {/* What works / What doesn't */}
-      <div className="grid grid-cols-1 gap-3">
-        <div className="bg-green-900/10 border border-green-900/40 rounded-2xl p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
-              <svg className="w-3 h-3 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      {/* What works / doesn't */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-white border border-border rounded-2xl p-4 shadow-sm">
+          <div className="flex items-center gap-1.5 mb-3">
+            <div className="w-4 h-4 rounded-full bg-[#2A5C45]/15 flex items-center justify-center">
+              <svg className="w-2.5 h-2.5 text-[#2A5C45]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <span className="text-green-400 text-sm font-semibold">What Works</span>
+            <span className="text-[#2A5C45] text-xs font-semibold">What Works</span>
           </div>
           <ul className="space-y-2">
             {results.what_works.map((item, i) => (
-              <li key={i} className="flex gap-2 text-xs text-gray-300 leading-relaxed">
-                <span className="text-green-500 mt-0.5 shrink-0">→</span>
+              <li key={i} className="text-xs text-text-secondary leading-relaxed flex gap-1.5">
+                <span className="text-[#2A5C45] shrink-0 mt-0.5">·</span>
                 {item}
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="bg-red-900/10 border border-red-900/40 rounded-2xl p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center">
-              <svg className="w-3 h-3 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="bg-white border border-border rounded-2xl p-4 shadow-sm">
+          <div className="flex items-center gap-1.5 mb-3">
+            <div className="w-4 h-4 rounded-full bg-[#8B2E2E]/15 flex items-center justify-center">
+              <svg className="w-2.5 h-2.5 text-[#8B2E2E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
-            <span className="text-red-400 text-sm font-semibold">What Doesn't Work</span>
+            <span className="text-[#8B2E2E] text-xs font-semibold">Needs Work</span>
           </div>
           <ul className="space-y-2">
             {results.what_doesnt_work.map((item, i) => (
-              <li key={i} className="flex gap-2 text-xs text-gray-300 leading-relaxed">
-                <span className="text-red-500 mt-0.5 shrink-0">→</span>
+              <li key={i} className="text-xs text-text-secondary leading-relaxed flex gap-1.5">
+                <span className="text-[#8B2E2E] shrink-0 mt-0.5">·</span>
                 {item}
               </li>
             ))}
@@ -100,37 +99,37 @@ export default function ResultsPanel({ results }: ResultsPanelProps) {
         </div>
       </div>
 
-      {/* Brain regions with emotion tags */}
-      <div className="bg-navy-light border border-gray-800 rounded-2xl p-4">
-        <h3 className="text-white font-semibold text-sm mb-4">Brain Regions & Emotions Triggered</h3>
-        <div className="space-y-4">
+      {/* Brain regions */}
+      <div className="bg-white border border-border rounded-2xl p-5 shadow-sm">
+        <p className="text-xs font-semibold text-text-secondary uppercase tracking-widest mb-4">Brain Regions</p>
+        <div className="space-y-5">
           {results.regions.map((region) => (
             <div key={region.name}>
               <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-300 text-xs font-medium">{region.name}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full border ${getScoreBadgeColor(region.score)}`}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-text-primary text-xs font-semibold">{region.name}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${getEmotionStyle(region.score)}`}>
                     {region.emotion}
                   </span>
                 </div>
-                <span className="text-xs text-gray-500">{getScoreLabel(region.score)}</span>
+                <span className="text-text-secondary text-xs">{getStrength(region.score)}</span>
               </div>
               <ScoreBar score={region.score} />
-              <p className="text-gray-500 text-xs mt-1.5 leading-relaxed">{region.description}</p>
+              <p className="text-text-secondary text-xs mt-1.5 leading-relaxed">{region.description}</p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Networks - compact */}
-      <div className="bg-navy-light border border-gray-800 rounded-2xl p-4">
-        <h3 className="text-white font-semibold text-sm mb-3">Brain Networks</h3>
-        <div className="space-y-2.5">
+      {/* Networks */}
+      <div className="bg-white border border-border rounded-2xl p-5 shadow-sm">
+        <p className="text-xs font-semibold text-text-secondary uppercase tracking-widest mb-4">Brain Networks</p>
+        <div className="space-y-3">
           {results.networks.map((network) => (
             <div key={network.name}>
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-gray-400">{network.name}</span>
-                <span className="text-white font-medium">{network.score}%</span>
+                <span className="text-text-secondary font-medium">{network.name}</span>
+                <span className="text-text-primary font-semibold">{network.score}%</span>
               </div>
               <ScoreBar score={network.score} />
             </div>
