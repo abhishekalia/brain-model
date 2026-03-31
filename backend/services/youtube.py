@@ -1,7 +1,7 @@
 import httpx
 import re
 
-def extract_video_id(url: str) -> str | None:
+def extract_video_id(url: str) -> str:
     patterns = [
         r'(?:v=|\/)([0-9A-Za-z_-]{11})',
         r'(?:youtu\.be\/)([0-9A-Za-z_-]{11})',
@@ -39,8 +39,8 @@ async def extract_youtube_content(url: str) -> str:
     # Get transcript
     try:
         from youtube_transcript_api import YouTubeTranscriptApi
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=['en', 'en-US', 'en-GB'])
-        transcript_text = ' '.join([entry['text'] for entry in transcript_list])
+        fetched = YouTubeTranscriptApi().fetch(video_id)
+        transcript_text = ' '.join([entry.text for entry in fetched])
         if transcript_text:
             parts.append(f"Transcript:\n{transcript_text[:3000]}")
     except Exception:
