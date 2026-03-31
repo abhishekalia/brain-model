@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
 
 class AnalyzeRequest(BaseModel):
     input_type: str  # "youtube" or "text"
@@ -10,6 +10,7 @@ class BrainRegion(BaseModel):
     score: int
     description: str
     marketing_label: str
+    emotion: str  # e.g. "Trust & Connection"
 
 class BrainNetwork(BaseModel):
     name: str
@@ -21,3 +22,6 @@ class AnalyzeResponse(BaseModel):
     networks: List[BrainNetwork]
     summary: str
     engagement_score: int
+    content_summary: str       # 2-line plain English summary of what the content is about
+    what_works: List[str]      # 3-5 bullet points of what's neurologically strong
+    what_doesnt_work: List[str]  # 3-5 bullet points of what's weak or missing
