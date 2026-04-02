@@ -46,7 +46,7 @@ async def get_tribe_scores(youtube_url: str) -> dict:
         )
 
     try:
-        analyze_video = modal.Function.lookup(
+        analyze_video = modal.Function.from_name(
             "brain-trigger-tribe-worker",
             "analyze_video",
         )
@@ -71,7 +71,7 @@ def is_tribe_available() -> bool:
     """Check if Modal worker is reachable. Used for graceful fallback."""
     try:
         import modal
-        modal.Function.lookup("brain-trigger-tribe-worker", "analyze_video")
+        modal.Function.from_name("brain-trigger-tribe-worker", "analyze_video")
         return True
     except Exception:
         return False

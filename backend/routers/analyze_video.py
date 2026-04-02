@@ -37,7 +37,7 @@ async def analyze_video(file: UploadFile = File(...)):
     try:
         # Call Modal TRIBE v2 worker with raw video bytes
         import modal
-        analyze_video_file = modal.Function.lookup(
+        analyze_video_file = modal.Function.from_name(
             "brain-trigger-tribe-worker",
             "analyze_video_file",
         )
