@@ -60,11 +60,4 @@ async def analyze_video(file: UploadFile = File(...)):
         return result
 
     except Exception as e:
-        error_msg = str(e)
-        # If Modal isn't available, fall back to Claude with no content
-        if "not found" in error_msg.lower() or "modal" in error_msg.lower():
-            raise HTTPException(
-                status_code=503,
-                detail="TRIBE v2 worker unavailable. Deploy the Modal worker first."
-            )
-        raise HTTPException(status_code=500, detail=error_msg)
+        raise HTTPException(status_code=500, detail=str(e))
