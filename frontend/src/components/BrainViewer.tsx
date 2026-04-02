@@ -1,7 +1,7 @@
 'use client';
-import { useRef, useState, Suspense } from 'react';
+import { useRef, useState, useMemo, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Html } from '@react-three/drei';
+import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { BrainRegion } from '@/types';
 import { BRAIN_REGIONS } from '@/lib/brainRegions';
@@ -79,8 +79,28 @@ function Hotspot({ position, score, name, regionData, onHover, isHovered }: Hots
   );
 }
 
+function EmojiPlane() {
+  const texture = useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d')!;
+    ctx.font = '340px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🧠', 256, 270);
+    return new THREE.CanvasTexture(canvas);
+  }, []);
+
+  return (
+    <mesh>
+      <planeGeometry args={[2.6, 2.6]} />
+      <meshBasicMaterial map={texture} transparent depthWrite={false} />
+    </mesh>
+  );
+}
+
 function BrainModel({ regions }: { regions: BrainRegion[] }) {
-  const { scene } = useGLTF('/brain.glb');
   const [hoveredRegion, setHoveredRegion] = useState<string | null>(null);
   const groupRef = useRef<THREE.Group>(null);
 
@@ -90,24 +110,11 @@ function BrainModel({ regions }: { regions: BrainRegion[] }) {
     }
   });
 
-  scene.traverse((child) => {
-    if ((child as THREE.Mesh).isMesh) {
-      const mesh = child as THREE.Mesh;
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      mesh.material = new THREE.MeshStandardMaterial({
-        color: new THREE.Color('#C8A09A'),
-        roughness: 0.85,
-        metalness: 0.0,
-      });
-    }
-  });
-
   const getRegionScore = (name: string) => regions.find((r) => r.name === name)?.score ?? 0;
 
   return (
     <group ref={groupRef} position={[0, 0, 0]}>
-      <primitive object={scene} scale={1.8} />
+      <EmojiPlane />
       {BRAIN_REGIONS.map((region) => (
         <Hotspot
           key={region.name}
