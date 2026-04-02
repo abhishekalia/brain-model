@@ -43,7 +43,7 @@ async def analyze_video(file: UploadFile = File(...)):
         # Encode video as base64 and POST to Modal web endpoint
         video_b64 = base64.b64encode(video_bytes).decode("utf-8")
 
-        async with httpx.AsyncClient(timeout=1200) as client:
+        async with httpx.AsyncClient(timeout=1200, follow_redirects=True) as client:
             resp = await client.post(
                 TRIBE_ENDPOINT,
                 json={
