@@ -372,7 +372,14 @@ def analyze_video_endpoint(body: dict) -> dict:
     video_bytes = base64.b64decode(video_b64)
     title = body.get("title", "")
 
-    return analyze_video_file.remote(video_bytes=video_bytes, title=title)
+    try:
+        return analyze_video_file.remote(video_bytes=video_bytes, title=title)
+    except Exception as e:
+        import traceback
+        error_detail = traceback.format_exc()
+        print(f"[TRIBE endpoint] ERROR: {error_detail}")
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.local_entrypoint()
