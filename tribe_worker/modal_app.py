@@ -302,10 +302,13 @@ def verify_hcp_labels() -> list[str]:
     volumes={WEIGHTS_PATH: volume},
     secrets=[modal.Secret.from_name("huggingface"), modal.Secret.from_name("youtube-cookies")],
     timeout=1200,
+    min_containers=1,
 )
 def analyze_video_file(video_bytes: bytes, title: str = "") -> dict:
     """Internal function — called by the web endpoint."""
     import tempfile
+    import subprocess
+    import json as _json
 
     model = _load_model()
 
@@ -314,22 +317,26 @@ def analyze_video_file(video_bytes: bytes, title: str = "") -> dict:
         with open(video_path, "wb") as f:
             f.write(video_bytes)
 
-        # Trim if needed
-        import subprocess, json as _json
+        # Get duration
         probe = subprocess.run(
             ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", video_path],
             capture_output=True, text=True,
         )
         duration = float(_json.loads(probe.stdout).get("format", {}).get("duration", 0))
-        if duration > MAX_VIDEO_SECONDS:
-            trimmed = os.path.join(tmpdir, "trimmed.mp4")
-            subprocess.run(
-                ["ffmpeg", "-i", video_path, "-t", str(MAX_VIDEO_SECONDS), "-c", "copy", trimmed, "-y"],
-                check=True, capture_output=True,
-            )
-            video_path = trimmed
 
-        print("[TRIBE worker] Running TRIBE v2 inference on uploaded file...")
+        # Trim + downsample to 4fps — reduces frames ~6x, major speedup
+        processed = os.path.join(tmpdir, "processed.mp4")
+        trim_args = ["-t", str(MAX_VIDEO_SECONDS)] if duration > MAX_VIDEO_SECONDS else []
+        subprocess.run(
+            ["ffmpeg", "-i", video_path]
+            + trim_args
+            + ["-vf", "fps=4", "-c:v", "libx264", "-c:a", "aac", processed, "-y"],
+            check=True, capture_output=True,
+        )
+        video_path = processed
+        print(f"[TRIBE worker] Preprocessed video: {duration:.0f}s → 4fps")
+
+        print("[TRIBE worker] Running TRIBE v2 inference...")
         scores = _run_inference(model, video_path)
         print(f"[TRIBE worker] Scores: {scores}")
 
