@@ -41,6 +41,7 @@ image = (
     .run_commands("curl -LsSf https://astral.sh/uv/install.sh | sh")
     .env({"PATH": "/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"})
     .pip_install(
+        "fastapi[standard]",
         # TRIBE v2 from GitHub (CC-BY-NC-4.0)
         "tribev2 @ git+https://github.com/facebookresearch/tribev2.git",
         # Video download
@@ -303,12 +304,8 @@ def verify_hcp_labels() -> list[str]:
     timeout=1200,
 )
 def analyze_video_file(video_bytes: bytes, title: str = "") -> dict:
-    """
-    Test entry point — accepts raw video bytes instead of a YouTube URL.
-    Used for local testing to bypass YouTube bot detection.
-    """
+    """Internal function — called by the web endpoint."""
     import tempfile
-    import numpy as np
 
     model = _load_model()
 
@@ -316,17 +313,59 @@ def analyze_video_file(video_bytes: bytes, title: str = "") -> dict:
         video_path = os.path.join(tmpdir, "video.mp4")
         with open(video_path, "wb") as f:
             f.write(video_bytes)
-        transcript = ""
+
+        # Trim if needed
+        import subprocess, json as _json
+        probe = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", video_path],
+            capture_output=True, text=True,
+        )
+        duration = float(_json.loads(probe.stdout).get("format", {}).get("duration", 0))
+        if duration > MAX_VIDEO_SECONDS:
+            trimmed = os.path.join(tmpdir, "trimmed.mp4")
+            subprocess.run(
+                ["ffmpeg", "-i", video_path, "-t", str(MAX_VIDEO_SECONDS), "-c", "copy", trimmed, "-y"],
+                check=True, capture_output=True,
+            )
+            video_path = trimmed
+
         print("[TRIBE worker] Running TRIBE v2 inference on uploaded file...")
         scores = _run_inference(model, video_path)
         print(f"[TRIBE worker] Scores: {scores}")
 
-    return {
-        "tribe_scores": scores,
-        "transcript": transcript,
-        "video_title": title,
-        "duration_seconds": 0,
-    }
+    return {"tribe_scores": scores, "transcript": "", "video_title": title, "duration_seconds": duration}
+
+
+@app.function(
+    gpu="A100",
+    volumes={WEIGHTS_PATH: volume},
+    secrets=[modal.Secret.from_name("huggingface"), modal.Secret.from_name("youtube-cookies")],
+    timeout=1200,
+    min_containers=1,
+)
+@modal.fastapi_endpoint(method="POST")
+def analyze_video_endpoint(body: dict) -> dict:
+    """
+    HTTP endpoint — called directly by Railway backend via httpx.
+    Accepts: {"video_b64": "<base64>", "title": "...", "api_key": "..."}
+    Returns: {"tribe_scores": {...}, "video_title": "...", "transcript": ""}
+    """
+    import base64
+
+    api_key = os.environ.get("TRIBE_API_KEY", "")
+    if api_key and body.get("api_key") != api_key:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Invalid API key")
+
+    video_b64 = body.get("video_b64", "")
+    if not video_b64:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=422, detail="video_b64 required")
+
+    video_bytes = base64.b64decode(video_b64)
+    title = body.get("title", "")
+
+    return analyze_video_file.remote(video_bytes=video_bytes, title=title)
 
 
 @app.local_entrypoint()
