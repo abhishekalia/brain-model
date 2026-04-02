@@ -1,13 +1,19 @@
 """
-Brain Trigger — Video Upload Endpoint
-Accepts a direct video file upload, sends to Modal TRIBE v2 worker via HTTP,
-enriches with Claude, returns AnalyzeResponse.
+Brain Trigger — Video Upload Endpoint (Async Job Queue)
+
+Flow:
+  POST /analyze-video        → upload file, start background job, return {job_id}
+  GET  /analyze-video/{id}   → poll status: {status: "pending|done|error", result?, error?}
+
+This avoids Railway's ~60s proxy timeout for long-running TRIBE v2 analysis.
 """
 
 import os
 import base64
+import uuid
+import asyncio
 import httpx
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, BackgroundTasks
 from models.schemas import AnalyzeResponse
 from services.claude_analyzer import enrich_with_tribe_scores
 
@@ -15,12 +21,48 @@ router = APIRouter()
 
 ALLOWED_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
 MAX_FILE_SIZE = 200 * 1024 * 1024  # 200MB
-TRIBE_ENDPOINT = os.getenv("TRIBE_ENDPOINT_URL")   # Modal web endpoint URL
+TRIBE_ENDPOINT = os.getenv("TRIBE_ENDPOINT_URL")
 TRIBE_API_KEY = os.getenv("TRIBE_API_KEY", "")
 
+# In-memory job store — fine for single-instance Railway deployment
+# Jobs expire naturally when Railway restarts
+jobs: dict[str, dict] = {}
 
-@router.post("/analyze-video", response_model=AnalyzeResponse)
-async def analyze_video(file: UploadFile = File(...)):
+
+async def _run_tribe_job(job_id: str, video_bytes: bytes, filename: str):
+    """Background task — runs TRIBE v2 and stores result in jobs dict."""
+    try:
+        video_b64 = base64.b64encode(video_bytes).decode("utf-8")
+
+        async with httpx.AsyncClient(timeout=1200, follow_redirects=True) as client:
+            resp = await client.post(
+                TRIBE_ENDPOINT,
+                json={
+                    "video_b64": video_b64,
+                    "title": filename,
+                    "api_key": TRIBE_API_KEY,
+                },
+            )
+            resp.raise_for_status()
+            tribe_result = resp.json()
+
+        result = await enrich_with_tribe_scores(
+            transcript=tribe_result.get("transcript", ""),
+            tribe_scores=tribe_result["tribe_scores"],
+            video_title=filename,
+        )
+        jobs[job_id] = {"status": "done", "result": result.dict()}
+
+    except Exception as e:
+        jobs[job_id] = {"status": "error", "error": str(e)}
+
+
+@router.post("/analyze-video")
+async def start_video_analysis(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+):
+    """Upload video → returns {job_id} immediately. Poll /analyze-video/{job_id} for results."""
     ext = os.path.splitext(file.filename or "")[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
@@ -36,33 +78,27 @@ async def analyze_video(file: UploadFile = File(...)):
     if not TRIBE_ENDPOINT:
         raise HTTPException(
             status_code=503,
-            detail="TRIBE_ENDPOINT_URL not set. Add the Modal web endpoint URL to Railway env vars."
+            detail="TRIBE_ENDPOINT_URL not configured."
         )
 
-    try:
-        # Encode video as base64 and POST to Modal web endpoint
-        video_b64 = base64.b64encode(video_bytes).decode("utf-8")
+    job_id = str(uuid.uuid4())
+    jobs[job_id] = {"status": "pending"}
 
-        async with httpx.AsyncClient(timeout=1200, follow_redirects=True) as client:
-            resp = await client.post(
-                TRIBE_ENDPOINT,
-                json={
-                    "video_b64": video_b64,
-                    "title": file.filename or "",
-                    "api_key": TRIBE_API_KEY,
-                },
-            )
-            resp.raise_for_status()
-            tribe_result = resp.json()
+    background_tasks.add_task(_run_tribe_job, job_id, video_bytes, file.filename or "")
 
-        result = await enrich_with_tribe_scores(
-            transcript=tribe_result.get("transcript", ""),
-            tribe_scores=tribe_result["tribe_scores"],
-            video_title=file.filename or "",
-        )
-        return result
+    return {"job_id": job_id}
 
-    except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail="TRIBE v2 analysis timed out. Try a shorter video.")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/analyze-video/{job_id}")
+async def get_video_analysis(job_id: str):
+    """
+    Poll for job status.
+    Returns:
+      {status: "pending"}              — still running
+      {status: "done", result: {...}}  — complete, result is AnalyzeResponse
+      {status: "error", error: "..."}  — failed
+    """
+    job = jobs.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    return job

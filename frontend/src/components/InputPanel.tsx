@@ -16,6 +16,7 @@ export default function InputPanel({ onAnalyze, onVideoResult, isLoading, setIsL
   const [textContent, setTextContent] = useState('');
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoError, setVideoError] = useState<string | null>(null);
+  const [videoProgress, setVideoProgress] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async () => {
@@ -23,11 +24,14 @@ export default function InputPanel({ onAnalyze, onVideoResult, isLoading, setIsL
       if (!videoFile) return;
       setIsLoading(true);
       setVideoError(null);
+      setVideoProgress('Uploading video...');
       try {
-        const result = await analyzeVideoFile(videoFile);
+        const result = await analyzeVideoFile(videoFile, (msg) => setVideoProgress(msg));
         onVideoResult(result);
+        setVideoProgress(null);
       } catch (err) {
         setVideoError(err instanceof Error ? err.message : 'Video analysis failed');
+        setVideoProgress(null);
       } finally {
         setIsLoading(false);
       }
@@ -135,7 +139,7 @@ export default function InputPanel({ onAnalyze, onVideoResult, isLoading, setIsL
             </svg>
             {activeTab === 'video' ? 'Running TRIBE v2 Analysis...' : 'Analyzing...'}
           </span>
-        ) : 'Analyze Brain Triggers'}
+        ) : activeTab === 'video' && isLoading && videoProgress ? videoProgress : 'Analyze Brain Triggers'}
       </button>
     </div>
   );
