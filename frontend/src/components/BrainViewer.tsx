@@ -2,15 +2,15 @@
 import { useState } from 'react';
 import { BrainRegion } from '@/types';
 
-// Positions as % from center of the emoji container (left%, top%)
+// Positions as % of the 320x320 container
 const HOTSPOT_POSITIONS: Record<string, { left: string; top: string }> = {
-  'FFA':            { left: '62%', top: '58%' },
-  'PPA':            { left: '38%', top: '62%' },
-  "Broca's Area":   { left: '28%', top: '44%' },
-  'TPJ':            { left: '70%', top: '38%' },
-  'Auditory Cortex':{ left: '74%', top: '52%' },
-  'Visual Cortex':  { left: '50%', top: '78%' },
-  'Amygdala':       { left: '54%', top: '52%' },
+  'FFA':             { left: '66%', top: '55%' },
+  'PPA':             { left: '34%', top: '60%' },
+  "Broca's Area":    { left: '25%', top: '42%' },
+  'TPJ':             { left: '72%', top: '36%' },
+  'Auditory Cortex': { left: '76%', top: '52%' },
+  'Visual Cortex':   { left: '50%', top: '80%' },
+  'Amygdala':        { left: '53%', top: '50%' },
 };
 
 function getColor(score: number) {
@@ -20,61 +20,44 @@ function getColor(score: number) {
   return '#B0A9A0';
 }
 
-function getSize(score: number) {
-  return 10 + (score / 100) * 8;
-}
-
-interface HotspotProps {
-  region: BrainRegion;
-  position: { left: string; top: string };
-}
-
-function Hotspot({ region, position }: HotspotProps) {
+function Hotspot({ region }: { region: BrainRegion }) {
   const [hovered, setHovered] = useState(false);
+  const pos = HOTSPOT_POSITIONS[region.name];
+  if (!pos) return null;
   const color = getColor(region.score);
-  const size = getSize(region.score);
+  const size = 10 + (region.score / 100) * 8;
   const active = region.score >= 50;
 
   return (
     <div
       className="absolute"
-      style={{ left: position.left, top: position.top, transform: 'translate(-50%, -50%)', zIndex: 10 }}
+      style={{ left: pos.left, top: pos.top, transform: 'translate(-50%,-50%)', zIndex: 20 }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Pulse ring for active regions */}
       {active && (
         <span
           className="absolute rounded-full animate-ping"
           style={{
-            width: size * 2.2,
-            height: size * 2.2,
-            backgroundColor: color,
-            opacity: 0.3,
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
+            width: size * 2.4, height: size * 2.4,
+            backgroundColor: color, opacity: 0.35,
+            top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
           }}
         />
       )}
-
-      {/* Dot */}
       <div
         className="relative rounded-full cursor-pointer transition-transform duration-150"
         style={{
-          width: size,
-          height: size,
+          width: size, height: size,
           backgroundColor: color,
-          boxShadow: `0 0 ${active ? 8 : 4}px ${color}`,
-          transform: hovered ? 'scale(1.6)' : 'scale(1)',
+          boxShadow: `0 0 ${active ? 10 : 4}px ${color}`,
+          transform: hovered ? 'scale(1.7)' : 'scale(1)',
         }}
       />
-
-      {/* Tooltip */}
       {hovered && (
         <div
-          className="absolute z-20 bg-white border border-border rounded-xl shadow-lg p-3 w-52 text-left pointer-events-none"
-          style={{ bottom: '130%', left: '50%', transform: 'translateX(-50%)' }}
+          className="absolute z-30 bg-white border border-border rounded-xl shadow-lg p-3 w-52 text-left pointer-events-none"
+          style={{ bottom: '140%', left: '50%', transform: 'translateX(-50%)' }}
         >
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-semibold text-text-primary">{region.name}</span>
@@ -92,33 +75,41 @@ function Hotspot({ region, position }: HotspotProps) {
 
 export default function BrainViewer({ regions, label }: { regions: BrainRegion[]; label?: string }) {
   return (
-    <div className="relative w-full h-full min-h-[400px] bg-[#F7F4F0] flex items-center justify-center overflow-hidden">
+    <div className="relative w-full h-full min-h-[400px] bg-[#F7F4F0] flex flex-col items-center justify-center overflow-visible">
       {label && (
         <div className="absolute top-4 left-4 z-10 text-xs font-semibold text-text-secondary uppercase tracking-widest bg-white/90 px-3 py-1.5 rounded-full border border-border shadow-sm">
           {label}
         </div>
       )}
 
-      {/* Brain emoji with 3D CSS rotation */}
-      <div className="relative" style={{ width: 260, height: 260 }}>
+      {/* Perspective wrapper — required for true 3D CSS transforms */}
+      <div style={{ perspective: '700px', perspectiveOrigin: '50% 50%' }}>
         <div
-          className="w-full h-full flex items-center justify-center select-none"
           style={{
-            fontSize: 200,
-            lineHeight: 1,
-            animation: 'brainFloat 6s ease-in-out infinite, brainSpin 12s linear infinite',
-            filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.12))',
+            width: 320,
+            height: 320,
+            position: 'relative',
+            animation: 'brain3d 8s ease-in-out infinite',
+            transformStyle: 'preserve-3d',
           }}
         >
-          🧠
-        </div>
+          {/* Emoji */}
+          <div
+            className="w-full h-full flex items-center justify-center select-none"
+            style={{
+              fontSize: 220,
+              lineHeight: 1,
+              filter: 'drop-shadow(0 12px 32px rgba(0,0,0,0.15))',
+            }}
+          >
+            🧠
+          </div>
 
-        {/* Hotspots */}
-        {regions.map((region) => {
-          const pos = HOTSPOT_POSITIONS[region.name];
-          if (!pos) return null;
-          return <Hotspot key={region.name} region={region} position={pos} />;
-        })}
+          {/* Hotspot dots */}
+          {regions.map((region) => (
+            <Hotspot key={region.name} region={region} />
+          ))}
+        </div>
       </div>
 
       {/* Legend */}
@@ -129,13 +120,12 @@ export default function BrainViewer({ regions, label }: { regions: BrainRegion[]
       </div>
 
       <style>{`
-        @keyframes brainFloat {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
-        }
-        @keyframes brainSpin {
-          0% { transform: rotateY(0deg); }
-          100% { transform: rotateY(360deg); }
+        @keyframes brain3d {
+          0%   { transform: translateY(0px)  rotateY(-18deg) rotateX(6deg);  }
+          25%  { transform: translateY(-10px) rotateY(0deg)   rotateX(-4deg); }
+          50%  { transform: translateY(0px)  rotateY(18deg)  rotateX(6deg);  }
+          75%  { transform: translateY(-10px) rotateY(0deg)   rotateX(-4deg); }
+          100% { transform: translateY(0px)  rotateY(-18deg) rotateX(6deg);  }
         }
       `}</style>
     </div>
