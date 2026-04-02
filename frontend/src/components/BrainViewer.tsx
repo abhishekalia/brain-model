@@ -25,47 +25,73 @@ function Hotspot({ region }: { region: BrainRegion }) {
   const pos = HOTSPOT_POSITIONS[region.name];
   if (!pos) return null;
   const color = getColor(region.score);
-  const size = 10 + (region.score / 100) * 8;
+  const size = 14 + (region.score / 100) * 10;
   const active = region.score >= 50;
 
   return (
     <div
-      className="absolute"
-      style={{ left: pos.left, top: pos.top, transform: 'translate(-50%,-50%)', zIndex: 20 }}
+      style={{
+        position: 'absolute',
+        left: pos.left,
+        top: pos.top,
+        transform: 'translate(-50%,-50%)',
+        zIndex: 999,
+        cursor: 'pointer',
+      }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       {active && (
         <span
-          className="absolute rounded-full animate-ping"
+          className="animate-ping"
           style={{
-            width: size * 2.4, height: size * 2.4,
-            backgroundColor: color, opacity: 0.35,
+            position: 'absolute',
+            width: size * 2.2, height: size * 2.2,
+            borderRadius: '50%',
+            backgroundColor: color, opacity: 0.4,
             top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
           }}
         />
       )}
       <div
-        className="relative rounded-full cursor-pointer transition-transform duration-150"
         style={{
           width: size, height: size,
+          borderRadius: '50%',
           backgroundColor: color,
-          boxShadow: `0 0 ${active ? 10 : 4}px ${color}`,
-          transform: hovered ? 'scale(1.7)' : 'scale(1)',
+          border: '2.5px solid white',
+          boxShadow: `0 0 12px ${color}, 0 2px 6px rgba(0,0,0,0.3)`,
+          transform: hovered ? 'scale(1.6)' : 'scale(1)',
+          transition: 'transform 0.15s ease',
+          position: 'relative',
         }}
       />
       {hovered && (
         <div
-          className="absolute z-30 bg-white border border-border rounded-xl shadow-lg p-3 w-52 text-left pointer-events-none"
-          style={{ bottom: '140%', left: '50%', transform: 'translateX(-50%)' }}
+          style={{
+            position: 'absolute',
+            bottom: '140%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 9999,
+            background: 'white',
+            border: '1px solid #e5e0d8',
+            borderRadius: 12,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+            padding: '10px 12px',
+            width: 210,
+            pointerEvents: 'none',
+            textAlign: 'left',
+          }}
         >
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-semibold text-text-primary">{region.name}</span>
-            <span className="text-xs font-bold" style={{ color }}>{region.score}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#1a1a1a' }}>{region.name}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color }}>{region.score}</span>
           </div>
-          <p className="text-[10px] text-text-secondary font-medium mb-1">{region.marketing_label}</p>
+          <p style={{ fontSize: 10, color: '#888', fontWeight: 500, marginBottom: 4 }}>{region.marketing_label}</p>
           {region.description && (
-            <p className="text-[10px] text-text-secondary leading-snug line-clamp-3">{region.description}</p>
+            <p style={{ fontSize: 10, color: '#666', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+              {region.description}
+            </p>
           )}
         </div>
       )}
@@ -83,14 +109,14 @@ export default function BrainViewer({ regions, label }: { regions: BrainRegion[]
       )}
 
       {/* Perspective wrapper — required for true 3D CSS transforms */}
-      <div style={{ perspective: '700px', perspectiveOrigin: '50% 50%' }}>
+      <div style={{ perspective: '700px', perspectiveOrigin: '50% 50%', overflow: 'visible' }}>
         <div
           style={{
             width: 320,
             height: 320,
             position: 'relative',
             animation: 'brain3d 8s ease-in-out infinite',
-            transformStyle: 'preserve-3d',
+            overflow: 'visible',
           }}
         >
           {/* Emoji */}
