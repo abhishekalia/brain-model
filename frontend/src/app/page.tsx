@@ -76,7 +76,12 @@ function AppTool() {
               <p className="text-text-secondary text-sm mb-6">
                 Know which emotions your content triggers — before you spend a dollar on ads
               </p>
-              <InputPanel onAnalyze={handleAnalyze} isLoading={isLoading} />
+              <InputPanel
+                onAnalyze={handleAnalyze}
+                onVideoResult={(r) => setResults(r)}
+                isLoading={isLoading}
+                setIsLoading={setIsLoading}
+              />
               {error && (
                 <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
                   {error}

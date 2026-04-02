@@ -11,6 +11,7 @@ class BrainRegion(BaseModel):
     description: str
     marketing_label: str
     emotion: str  # e.g. "Trust & Connection"
+    source: str = "claude"  # "tribe_v2" = real fMRI score | "claude" = estimated
 
 class BrainNetwork(BaseModel):
     name: str

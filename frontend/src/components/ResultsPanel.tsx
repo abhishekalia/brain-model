@@ -102,7 +102,14 @@ export default function ResultsPanel({ results }: ResultsPanelProps) {
 
       {/* Brain regions */}
       <div className="bg-white border border-border rounded-2xl p-5 shadow-sm">
-        <p className="text-xs font-semibold text-text-secondary uppercase tracking-widest mb-4">Brain Regions</p>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-xs font-semibold text-text-secondary uppercase tracking-widest">Brain Regions</p>
+          {results.regions.some(r => r.source === 'tribe_v2') && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200 font-medium">
+              Powered by TRIBE v2
+            </span>
+          )}
+        </div>
         <div className="space-y-5">
           {results.regions.map((region) => (
             <div key={region.name}>
@@ -112,6 +119,15 @@ export default function ResultsPanel({ results }: ResultsPanelProps) {
                   <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${getEmotionStyle(region.score)}`}>
                     {region.emotion}
                   </span>
+                  {region.source === 'tribe_v2' ? (
+                    <span className="text-xs px-1.5 py-0.5 rounded font-medium bg-indigo-50 text-indigo-500 border border-indigo-100">
+                      fMRI
+                    </span>
+                  ) : (
+                    <span className="text-xs px-1.5 py-0.5 rounded font-medium bg-gray-50 text-text-secondary/60 border border-border">
+                      {region.name === 'Amygdala' ? 'estimated¹' : 'estimated'}
+                    </span>
+                  )}
                 </div>
                 <span className="text-text-secondary text-xs">{getStrength(region.score)}</span>
               </div>
@@ -120,6 +136,11 @@ export default function ResultsPanel({ results }: ResultsPanelProps) {
             </div>
           ))}
         </div>
+        {results.regions.some(r => r.source === 'tribe_v2') && (
+          <p className="text-text-secondary/40 text-xs mt-4 pt-3 border-t border-border">
+            ¹ Amygdala is subcortical and not measured by TRIBE v2 — score is content-estimated.
+          </p>
+        )}
       </div>
 
       {/* Networks */}

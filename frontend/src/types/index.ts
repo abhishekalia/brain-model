@@ -4,6 +4,7 @@ export interface BrainRegion {
   description: string;
   marketing_label: string;
   emotion: string;
+  source?: 'tribe_v2' | 'claude';
 }
 
 export interface BrainNetwork {

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import analyze, waitlist
+from routers import analyze, waitlist, analyze_video
 
 app = FastAPI(title="Brain Trigger API")
 
@@ -14,3 +14,4 @@ app.add_middleware(
 
 app.include_router(analyze.router, prefix="/api")
 app.include_router(waitlist.router, prefix="/api")
+app.include_router(analyze_video.router, prefix="/api")
