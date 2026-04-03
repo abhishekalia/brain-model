@@ -118,22 +118,40 @@ function BrainModel({ regions }: { regions: BrainRegion[] }) {
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
 
-  // Apply gray material to all brain meshes
-  useMemo(() => {
-    scene.traverse((child) => {
+  // Clone scene so each panel gets its own instance
+  const clonedScene = useMemo(() => {
+    const clone = scene.clone(true);
+    clone.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
         mesh.material = new THREE.MeshStandardMaterial({
           color: new THREE.Color('#8a9ba8'),
           roughness: 0.65,
           metalness: 0.05,
-          transparent: false,
         });
         mesh.castShadow = true;
         mesh.receiveShadow = true;
       }
     });
+    return clone;
   }, [scene]);
+
+  // Auto-scale to fill viewport nicely
+  const scale = useMemo(() => {
+    const box = new THREE.Box3().setFromObject(clonedScene);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    return maxDim > 0 ? 2.2 / maxDim : 1;
+  }, [clonedScene]);
+
+  // Center the model
+  const offset = useMemo(() => {
+    const box = new THREE.Box3().setFromObject(clonedScene);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    return center;
+  }, [clonedScene]);
 
   useFrame((_, delta) => {
     if (groupRef.current && !hovered) {
@@ -147,7 +165,11 @@ function BrainModel({ regions }: { regions: BrainRegion[] }) {
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
     >
-      <primitive object={scene} />
+      <primitive
+        object={clonedScene}
+        scale={scale}
+        position={[-offset.x * scale, -offset.y * scale, -offset.z * scale]}
+      />
       {regions.map((region) => (
         <RegionBlob key={region.name} region={region} />
       ))}
