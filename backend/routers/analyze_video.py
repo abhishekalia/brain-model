@@ -34,17 +34,28 @@ async def _run_tribe_job(job_id: str, video_bytes: bytes, filename: str):
     try:
         video_b64 = base64.b64encode(video_bytes).decode("utf-8")
 
+        # Retry up to 4 times on 429 (Modal rate limit) with exponential backoff
+        import asyncio
+        max_retries = 4
+        tribe_result = None
         async with httpx.AsyncClient(timeout=1200, follow_redirects=True) as client:
-            resp = await client.post(
-                TRIBE_ENDPOINT,
-                json={
-                    "video_b64": video_b64,
-                    "title": filename,
-                    "api_key": TRIBE_API_KEY,
-                },
-            )
-            resp.raise_for_status()
-            tribe_result = resp.json()
+            for attempt in range(max_retries):
+                resp = await client.post(
+                    TRIBE_ENDPOINT,
+                    json={
+                        "video_b64": video_b64,
+                        "title": filename,
+                        "api_key": TRIBE_API_KEY,
+                    },
+                )
+                if resp.status_code == 429 and attempt < max_retries - 1:
+                    wait = 15 * (2 ** attempt)  # 15s, 30s, 60s
+                    print(f"[analyze_video] 429 rate limit — retrying in {wait}s (attempt {attempt+1})")
+                    await asyncio.sleep(wait)
+                    continue
+                resp.raise_for_status()
+                tribe_result = resp.json()
+                break
 
         result = await enrich_with_tribe_scores(
             transcript=tribe_result.get("transcript", ""),

@@ -33,10 +33,9 @@ function VideoPanel({ side }: { side: 'A' | 'B' }) {
     }
   };
 
-  const isA = side === 'A';
-  const color = isA ? '#7C3AED' : '#3B82F6';
-  const colorDim = isA ? 'rgba(124,58,237,0.15)' : 'rgba(59,130,246,0.15)';
-  const glowShadow = isA ? '0 0 20px rgba(124,58,237,0.4)' : '0 0 20px rgba(59,130,246,0.4)';
+  const color = '#7C3AED';
+  const colorDim = 'rgba(124,58,237,0.15)';
+  const glowShadow = '0 0 20px rgba(124,58,237,0.4)';
 
   return (
     <div className="flex flex-col h-full">
@@ -145,8 +144,8 @@ function AppTool() {
         <div className="font-display text-xs font-bold tracking-widest" style={{ color: '#7C3AED', letterSpacing: '0.25em' }}>
           A/B NEURAL ANALYSIS
         </div>
-        <div className="font-display text-xs" style={{ color: '#3B3B5A' }}>
-          TRIBE v2 · fMRI
+        <div className="font-display text-xs font-bold tracking-widest" style={{ color: '#4B3B8A', letterSpacing: '0.2em' }}>
+          POWERED BY TRIBE V2 fMRI
         </div>
       </nav>
 
@@ -163,7 +162,7 @@ function AppTool() {
             style={{ writingMode: 'vertical-rl', color: '#3B3B5A', letterSpacing: '0.4em' }}>VS</span>
         </div>
 
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0" style={{ borderLeft: '1px solid #1F1F1F' }}>
           <VideoPanel side="B" />
         </div>
       </div>
