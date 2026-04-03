@@ -152,16 +152,32 @@ def _load_model():
     )
 
 
-def _run_inference(model, video_path: str) -> dict[str, int]:
+def _extract_transcript_from_df(df) -> str:
+    """Extract transcribed speech from TRIBE's events dataframe."""
+    try:
+        # TRIBE v2 stores transcribed text in a 'text' column
+        if "text" in df.columns:
+            texts = df["text"].dropna().tolist()
+            return " ".join(str(t) for t in texts if str(t).strip())[:4000]
+    except Exception:
+        pass
+    return ""
+
+
+def _run_inference(model, video_path: str) -> tuple[dict[str, int], str]:
     """
     Run TRIBE v2 on a local video file.
-    Returns Brain Trigger region scores as 0-100 integers.
+    Returns (Brain Trigger region scores as 0-100 integers, transcript string).
     """
     import numpy as np
     from tribev2.utils import summarize_by_roi, get_hcp_labels
 
     # Build events dataframe from video (extracts audio + transcribes internally)
     df = model.get_events_dataframe(video_path=video_path)
+
+    # Extract transcript from TRIBE's internal Whisper transcription
+    transcript = _extract_transcript_from_df(df)
+    print(f"[TRIBE worker] Transcript length: {len(transcript)} chars")
 
     # Run inference — preds shape: (n_timesteps, 20484)
     preds, _ = model.predict(events=df)
@@ -208,7 +224,7 @@ def _run_inference(model, video_path: str) -> dict[str, int]:
         pct = sum(v <= val for v in all_raw) / len(all_raw)
         scores[bt_region] = max(0, min(100, round(pct * 100)))
 
-    return scores
+    return scores, transcript
 
 
 # ---------------------------------------------------------------------------
@@ -258,14 +274,15 @@ def analyze_video(youtube_url: str) -> dict:
             )
             video_path = trimmed
 
-        # Get transcript separately (TRIBE transcribes internally too, but
-        # youtube-transcript-api gives cleaner text for Claude enrichment)
-        transcript = _get_transcript(youtube_url)
+        # Get transcript — prefer youtube-transcript-api (cleaner), fall back to TRIBE's Whisper
+        yt_transcript = _get_transcript(youtube_url)
 
         # Run TRIBE v2 inference
         print("[TRIBE worker] Running TRIBE v2 inference...")
-        scores = _run_inference(model, video_path)
+        scores, tribe_transcript = _run_inference(model, video_path)
         print(f"[TRIBE worker] Scores: {scores}")
+
+        transcript = yt_transcript or tribe_transcript
 
     return {
         "tribe_scores": scores,
@@ -330,17 +347,17 @@ def analyze_video_file(video_bytes: bytes, title: str = "") -> dict:
         subprocess.run(
             ["ffmpeg", "-i", video_path]
             + trim_args
-            + ["-vf", "fps=4", "-c:v", "libx264", "-c:a", "aac", processed, "-y"],
+            + ["-vf", "fps=1", "-c:v", "libx264", "-c:a", "aac", processed, "-y"],
             check=True, capture_output=True,
         )
         video_path = processed
         print(f"[TRIBE worker] Preprocessed video: {duration:.0f}s → 4fps")
 
         print("[TRIBE worker] Running TRIBE v2 inference...")
-        scores = _run_inference(model, video_path)
+        scores, transcript = _run_inference(model, video_path)
         print(f"[TRIBE worker] Scores: {scores}")
 
-    return {"tribe_scores": scores, "transcript": "", "video_title": title, "duration_seconds": duration}
+    return {"tribe_scores": scores, "transcript": transcript, "video_title": title, "duration_seconds": duration}
 
 
 @app.function(
@@ -373,7 +390,7 @@ def analyze_video_endpoint(body: dict) -> dict:
     title = body.get("title", "")
 
     try:
-        return analyze_video_file.remote(video_bytes=video_bytes, title=title)
+        return analyze_video_file.local(video_bytes=video_bytes, title=title)
     except Exception as e:
         import traceback
         error_detail = traceback.format_exc()

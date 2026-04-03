@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import InputPanel from '@/components/InputPanel';
@@ -32,49 +32,48 @@ function AppTool() {
   };
 
   return (
-    <div className="min-h-screen bg-cream flex flex-col">
+    <div className="min-h-screen bg-bg flex flex-col">
       {/* Nav */}
-      <nav className="px-8 py-4 flex items-center justify-between border-b border-border bg-cream/80 backdrop-blur-sm sticky top-0 z-50">
+      <nav className="px-8 py-4 flex items-center justify-between border-b border-border">
         <div className="text-text-primary font-bold text-lg tracking-tight">
           Brain <span className="text-accent">Trigger</span>
         </div>
-        <div className="flex bg-cream-dark border border-border rounded-xl p-0.5">
+        <div className="flex bg-surface border border-border rounded-xl p-0.5">
           {(['single', 'ab'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                tab === t ? 'bg-white shadow-sm text-text-primary' : 'text-text-secondary hover:text-text-primary'
+                tab === t ? 'bg-accent text-white' : 'text-text-secondary hover:text-text-primary'
               }`}
             >
-              {t === 'single' ? 'Single Analysis' : 'A/B Compare'}
+              {t === 'single' ? 'Single' : 'A/B Compare'}
             </button>
           ))}
         </div>
-        <div className="w-32" /> {/* spacer */}
+        <div className="w-32" />
       </nav>
 
-      {/* Main layout */}
       {tab === 'single' ? (
         <div className="flex flex-1 overflow-hidden">
-          {/* LEFT: Brain hero */}
-          <div className="w-1/2 border-r border-border relative flex flex-col">
+          {/* LEFT: Brain */}
+          <div className="w-1/2 border-r border-border flex flex-col">
             <div className="flex-1">
               <BrainViewer regions={results?.regions ?? []} />
             </div>
-            <div className="px-8 pb-6 pt-4 border-t border-border">
-              <p className="text-xs text-text-secondary/60 uppercase tracking-widest font-medium">Hover regions to explore · Drag to rotate</p>
+            <div className="px-8 pb-5 pt-3 border-t border-border">
+              <p className="text-xs text-text-secondary/40 uppercase tracking-widest">Hover regions to explore</p>
             </div>
           </div>
 
           {/* RIGHT: Input + Results */}
           <div className="w-1/2 flex flex-col overflow-y-auto">
             <div className="p-8 border-b border-border">
-              <h1 className="text-3xl font-bold text-text-primary tracking-tight mb-1">
+              <h1 className="text-2xl font-bold text-text-primary tracking-tight mb-1">
                 Brain <span className="text-accent">Trigger</span>
               </h1>
               <p className="text-text-secondary text-sm mb-6">
-                Know which emotions your content triggers — before you spend a dollar on ads
+                Predict how your content activates the brain — before you spend on ads
               </p>
               <InputPanel
                 onAnalyze={handleAnalyze}
@@ -83,7 +82,7 @@ function AppTool() {
                 setIsLoading={setIsLoading}
               />
               {error && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+                <div className="mt-4 p-3 bg-red-900/20 border border-red-800/30 rounded-xl text-red-400 text-sm">
                   {error}
                 </div>
               )}
@@ -98,17 +97,17 @@ function AppTool() {
           {/* LEFT: Two brains */}
           <div className="w-1/2 border-r border-border grid grid-rows-2">
             <div className="border-b border-border">
-              <BrainViewer regions={abResults?.a.regions ?? []} label="Version A" />
+              <BrainViewer regions={abResults?.a.regions ?? []} label="A" />
             </div>
             <div>
-              <BrainViewer regions={abResults?.b.regions ?? []} label="Version B" />
+              <BrainViewer regions={abResults?.b.regions ?? []} label="B" />
             </div>
           </div>
 
-          {/* RIGHT: AB Input + Results */}
+          {/* RIGHT */}
           <div className="w-1/2 flex flex-col overflow-y-auto">
             <div className="p-8 border-b border-border">
-              <h1 className="text-3xl font-bold text-text-primary tracking-tight mb-1">
+              <h1 className="text-2xl font-bold text-text-primary tracking-tight mb-1">
                 A/B <span className="text-accent">Compare</span>
               </h1>
               <p className="text-text-secondary text-sm mb-6">Compare two pieces of content to find the winner</p>
@@ -123,7 +122,7 @@ function AppTool() {
                 <ABResults resultA={abResults.a} resultB={abResults.b} />
               ) : (
                 <div className="flex items-center justify-center h-40">
-                  <p className="text-text-secondary/50 text-sm">Results will appear here</p>
+                  <p className="text-text-secondary/40 text-sm">Results will appear here</p>
                 </div>
               )}
             </div>
@@ -143,14 +142,13 @@ function WaitlistPage() {
     e.preventDefault();
     if (!email.trim()) return;
     setStatus('loading');
-    setErrorMsg('');
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/waitlist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-      if (!res.ok) throw new Error('Failed to join');
+      if (!res.ok) throw new Error('Failed');
       setStatus('success');
       setEmail('');
     } catch {
@@ -160,38 +158,32 @@ function WaitlistPage() {
   };
 
   return (
-    <main className="min-h-screen bg-cream flex flex-col">
+    <main className="min-h-screen bg-bg flex flex-col">
       <nav className="px-8 py-5 flex items-center justify-between border-b border-border">
         <div className="text-text-primary font-bold text-lg tracking-tight">
           Brain <span className="text-accent">Trigger</span>
         </div>
-        <span className="text-xs text-accent bg-accent/10 border border-accent/20 px-3 py-1 rounded-full font-medium">
+        <span className="text-xs text-accent bg-accent-dim border border-accent/20 px-3 py-1 rounded-full font-medium">
           Coming Soon
         </span>
       </nav>
 
       <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-20">
         <div className="max-w-2xl mx-auto">
-          <div className="inline-block text-xs text-accent bg-accent/10 border border-accent/20 px-4 py-1.5 rounded-full mb-8 tracking-widest uppercase font-medium">
+          <div className="inline-block text-xs text-accent bg-accent-dim border border-accent/20 px-4 py-1.5 rounded-full mb-8 tracking-widest uppercase font-medium">
             Neuroscience-Powered Marketing
           </div>
-
           <h1 className="text-5xl md:text-6xl font-bold text-text-primary mb-6 leading-tight tracking-tight">
             Know which emotions<br />
             <span className="text-accent">your content triggers</span>
           </h1>
-
-          <p className="text-text-secondary text-lg mb-3 leading-relaxed max-w-xl mx-auto">
-            Brain Trigger analyzes your videos and ad copy to show exactly which brain regions activate — and what that means for clicks, conversions, and recall.
-          </p>
-
-          <p className="text-text-secondary/60 text-sm mb-10">
-            Used by performance marketers and creators to A/B test content before launch.
+          <p className="text-text-secondary text-lg mb-10 leading-relaxed max-w-xl mx-auto">
+            Brain Trigger analyzes your videos and ad copy using real fMRI neuroscience — showing exactly which brain regions activate and what that means for conversions.
           </p>
 
           {status === 'success' ? (
-            <div className="bg-white border border-border rounded-2xl px-8 py-6 max-w-sm mx-auto shadow-sm">
-              <p className="text-text-primary font-semibold text-base">You're on the list.</p>
+            <div className="bg-surface border border-border rounded-2xl px-8 py-6 max-w-sm mx-auto">
+              <p className="text-text-primary font-semibold">You're on the list.</p>
               <p className="text-text-secondary text-sm mt-1">We'll reach out when early access opens.</p>
             </div>
           ) : (
@@ -202,29 +194,28 @@ function WaitlistPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 required
-                className="flex-1 bg-white border border-border rounded-xl px-5 py-3.5 text-text-primary placeholder-text-secondary/50 focus:outline-none focus:border-accent/40 text-sm shadow-sm"
+                className="flex-1 bg-surface border border-border rounded-xl px-5 py-3.5 text-text-primary placeholder-text-secondary text-sm focus:outline-none focus:border-accent/50"
               />
               <button
                 type="submit"
                 disabled={status === 'loading'}
-                className="bg-text-primary hover:bg-text-primary/80 disabled:bg-border text-white font-medium px-7 py-3.5 rounded-xl transition-all text-sm whitespace-nowrap"
+                className="bg-accent hover:bg-accent/90 disabled:opacity-50 text-white font-semibold px-7 py-3.5 rounded-xl transition-all text-sm whitespace-nowrap"
+                style={{ boxShadow: '0 0 20px rgba(255,101,0,0.3)' }}
               >
                 {status === 'loading' ? 'Joining...' : 'Get Early Access'}
               </button>
             </form>
           )}
-
-          {errorMsg && <p className="text-red-600 text-sm mt-3">{errorMsg}</p>}
-          <p className="text-text-secondary/40 text-xs mt-4">No spam. Unsubscribe anytime.</p>
+          {errorMsg && <p className="text-red-400 text-sm mt-3">{errorMsg}</p>}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mt-20 w-full">
           {[
             { title: 'Predict Ad Performance', desc: 'See emotional triggers before launch — not after wasting budget.' },
-            { title: 'Real Neuroscience', desc: 'Powered by TRIBE v2 research and Claude AI for accurate brain mapping.' },
-            { title: 'A/B Test Content', desc: 'Compare two versions of your script or video to pick the stronger one.' },
+            { title: 'Real Neuroscience', desc: 'Powered by TRIBE v2 fMRI model and Claude AI for accurate brain mapping.' },
+            { title: 'A/B Test Content', desc: 'Compare two videos or scripts side-by-side to pick the stronger one.' },
           ].map((f) => (
-            <div key={f.title} className="bg-white border border-border rounded-2xl p-6 text-left shadow-sm">
+            <div key={f.title} className="bg-surface border border-border rounded-2xl p-6 text-left">
               <div className="text-text-primary font-semibold text-sm mb-2">{f.title}</div>
               <div className="text-text-secondary text-sm leading-relaxed">{f.desc}</div>
             </div>
@@ -232,7 +223,7 @@ function WaitlistPage() {
         </div>
       </div>
 
-      <footer className="text-center text-text-secondary/40 text-xs py-8 border-t border-border">
+      <footer className="text-center text-text-secondary/30 text-xs py-8 border-t border-border">
         © 2026 Brain Trigger. All rights reserved.
       </footer>
     </main>
@@ -242,7 +233,6 @@ function WaitlistPage() {
 function HomeInner() {
   const searchParams = useSearchParams();
   const isPreview = searchParams.get('preview') === 'true';
-
   if (isPreview) return <AppTool />;
   return <WaitlistPage />;
 }

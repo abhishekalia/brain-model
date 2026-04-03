@@ -24,7 +24,7 @@ export default function InputPanel({ onAnalyze, onVideoResult, isLoading, setIsL
       if (!videoFile) return;
       setIsLoading(true);
       setVideoError(null);
-      setVideoProgress('Uploading video...');
+      setVideoProgress('Uploading...');
       try {
         const result = await analyzeVideoFile(videoFile, (msg) => setVideoProgress(msg));
         onVideoResult(result);
@@ -42,27 +42,27 @@ export default function InputPanel({ onAnalyze, onVideoResult, isLoading, setIsL
     onAnalyze(activeTab, content);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) setVideoFile(file);
-  };
+  const tabs = [
+    { id: 'youtube' as const, label: 'YouTube' },
+    { id: 'text' as const, label: 'Text' },
+    { id: 'video' as const, label: 'Upload Video' },
+  ];
 
   return (
-    <div className="bg-white border border-border rounded-2xl p-6 shadow-sm">
-      <p className="text-xs font-semibold text-text-secondary uppercase tracking-widest mb-5">Analyze Content</p>
-
-      <div className="flex gap-1 mb-5 bg-cream-dark rounded-xl p-1">
-        {(['youtube', 'text', 'video'] as const).map((tab) => (
+    <div className="space-y-3">
+      {/* Tab switcher */}
+      <div className="flex gap-1 bg-surface border border-border rounded-xl p-1">
+        {tabs.map((tab) => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === tab
-                ? 'bg-white text-text-primary shadow-sm'
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+              activeTab === tab.id
+                ? 'bg-accent text-white'
                 : 'text-text-secondary hover:text-text-primary'
             }`}
           >
-            {tab === 'youtube' ? 'YouTube URL' : tab === 'text' ? 'Paste Text' : 'Upload Video'}
+            {tab.label}
           </button>
         ))}
       </div>
@@ -73,7 +73,7 @@ export default function InputPanel({ onAnalyze, onVideoResult, isLoading, setIsL
           value={youtubeUrl}
           onChange={(e) => setYoutubeUrl(e.target.value)}
           placeholder="https://youtube.com/watch?v=..."
-          className="w-full bg-cream-dark border border-border rounded-xl px-4 py-3 text-text-primary placeholder-text-secondary/50 focus:outline-none focus:border-accent/40 text-sm transition-colors"
+          className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-text-primary placeholder-text-secondary text-sm focus:outline-none focus:border-accent/50 transition-colors"
         />
       )}
 
@@ -82,8 +82,8 @@ export default function InputPanel({ onAnalyze, onVideoResult, isLoading, setIsL
           value={textContent}
           onChange={(e) => setTextContent(e.target.value)}
           placeholder="Paste your script, ad copy, or content here..."
-          rows={6}
-          className="w-full bg-cream-dark border border-border rounded-xl px-4 py-3 text-text-primary placeholder-text-secondary/50 focus:outline-none focus:border-accent/40 text-sm resize-none transition-colors"
+          rows={5}
+          className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-text-primary placeholder-text-secondary text-sm focus:outline-none focus:border-accent/50 resize-none transition-colors"
         />
       )}
 
@@ -91,55 +91,46 @@ export default function InputPanel({ onAnalyze, onVideoResult, isLoading, setIsL
         <div>
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="w-full bg-cream-dark border-2 border-dashed border-border rounded-xl px-4 py-8 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-accent/40 transition-colors"
+            className="w-full bg-surface border border-border border-dashed rounded-xl px-4 py-8 flex flex-col items-center gap-2 cursor-pointer hover:border-accent/40 transition-colors"
           >
-            <svg className="w-8 h-8 text-text-secondary/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-7 h-7 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
             </svg>
             {videoFile ? (
               <p className="text-text-primary text-sm font-medium">{videoFile.name}</p>
             ) : (
               <>
-                <p className="text-text-secondary text-sm">Click to upload your ad or video</p>
-                <p className="text-text-secondary/50 text-xs">MP4, MOV, AVI — max 500MB</p>
+                <p className="text-text-secondary text-sm">Click to upload video</p>
+                <p className="text-text-secondary/50 text-xs">MP4, MOV, AVI — max 200MB</p>
               </>
             )}
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".mp4,.mov,.avi,.mkv,.webm"
-            onChange={handleFileChange}
-            className="hidden"
-          />
+          <input ref={fileInputRef} type="file" accept=".mp4,.mov,.avi,.mkv,.webm" onChange={(e) => { const f = e.target.files?.[0]; if (f) setVideoFile(f); }} className="hidden" />
           {videoFile && (
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-xs text-text-secondary">
-                {(videoFile.size / 1024 / 1024).toFixed(1)} MB
-              </span>
-              <span className="text-xs text-indigo-500 font-medium">Powered by TRIBE v2 fMRI</span>
+            <div className="mt-2 flex justify-between items-center">
+              <span className="text-xs text-text-secondary">{(videoFile.size / 1024 / 1024).toFixed(1)} MB</span>
+              <span className="text-xs text-accent font-medium">TRIBE v2 fMRI</span>
             </div>
           )}
-          {videoError && (
-            <p className="mt-2 text-red-600 text-xs">{videoError}</p>
-          )}
+          {videoError && <p className="mt-2 text-red-400 text-xs">{videoError}</p>}
         </div>
       )}
 
       <button
         onClick={handleSubmit}
         disabled={isLoading || (activeTab === 'video' && !videoFile)}
-        className="mt-4 w-full bg-text-primary hover:bg-text-primary/80 disabled:bg-border disabled:text-text-secondary disabled:cursor-not-allowed text-white font-medium py-3 rounded-xl transition-all text-sm"
+        className="w-full bg-accent hover:bg-accent/90 disabled:bg-surface disabled:text-text-secondary disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-all text-sm"
+        style={{ boxShadow: isLoading ? 'none' : '0 0 20px rgba(255,101,0,0.3)' }}
       >
         {isLoading ? (
           <span className="flex items-center justify-center gap-2">
             <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
             </svg>
-            {activeTab === 'video' ? 'Running TRIBE v2 Analysis...' : 'Analyzing...'}
+            {videoProgress || 'Analyzing...'}
           </span>
-        ) : activeTab === 'video' && isLoading && videoProgress ? videoProgress : 'Analyze Brain Triggers'}
+        ) : 'Analyze'}
       </button>
     </div>
   );
