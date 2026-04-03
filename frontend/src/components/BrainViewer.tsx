@@ -4,14 +4,15 @@ import { BrainRegion } from '@/types';
 
 // Anatomical positions in the 380x268 SVG viewBox (side view, left hemisphere)
 // Frontal = left, Occipital = right, Temporal = bottom
+// Positions within 420x280 viewBox — side view, frontal=left, occipital=right
 const REGION_SPOTS: Record<string, { cx: number; cy: number }> = {
-  "Broca's Area":    { cx: 105, cy: 172 },
-  'Auditory Cortex': { cx: 182, cy: 215 },
-  'FFA':             { cx: 228, cy: 220 },
-  'PPA':             { cx: 258, cy: 208 },
-  'TPJ':             { cx: 268, cy: 148 },
-  'Visual Cortex':   { cx: 302, cy: 160 },
-  'Amygdala':        { cx: 155, cy: 196 },
+  "Broca's Area":    { cx: 108, cy: 168 },  // inferior frontal, above Sylvian
+  'Auditory Cortex': { cx: 188, cy: 210 },  // superior temporal gyrus
+  'FFA':             { cx: 232, cy: 255 },  // inferior temporal (temporal lobe)
+  'PPA':             { cx: 262, cy: 248 },  // parahippocampal (posterior temporal)
+  'TPJ':             { cx: 278, cy: 158 },  // temporoparietal junction
+  'Visual Cortex':   { cx: 318, cy: 168 },  // occipital lobe
+  'Amygdala':        { cx: 155, cy: 200 },  // medial temporal
 };
 
 function getGlowColor(score: number) {
@@ -134,62 +135,73 @@ export default function BrainViewer({ regions, label }: { regions: BrainRegion[]
       )}
 
       <svg
-        viewBox="0 0 380 268"
-        style={{ width: '85%', maxWidth: 420, height: 'auto' }}
+        viewBox="0 0 420 280"
+        style={{ width: '90%', maxWidth: 480, height: 'auto' }}
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          <filter id="brain-glow">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
+          <radialGradient id="brain-fill" cx="45%" cy="45%" r="55%">
+            <stop offset="0%" stopColor="#181818" />
+            <stop offset="100%" stopColor="#0a0a0a" />
+          </radialGradient>
         </defs>
 
-        {/* Brain silhouette — side view left hemisphere */}
-        {/* Main cortex outline */}
+        {/* ── Brain silhouette: side view, left hemisphere ──
+            Frontal = LEFT, Occipital = RIGHT, Temporal = BOTTOM PROTRUSION */}
         <path
           d="
-            M 148 252
-            C 122 252, 96 242, 78 224
-            C 60 206, 52 182, 56 158
-            C 40 148, 28 128, 30 106
-            C 32 84, 50 64, 72 52
-            C 96 38, 126 32, 158 32
-            C 190 32, 224 38, 252 54
-            C 280 70, 300 94, 308 120
-            C 318 148, 314 174, 300 194
-            C 286 214, 264 228, 240 236
-            C 216 244, 190 246, 166 246
-            C 160 250, 154 252, 148 252 Z
+            M 72 218
+            C 52 206, 38 184, 36 160
+            C 34 136, 42 110, 58 88
+            C 74 66, 98 50, 126 42
+            C 154 34, 184 32, 212 36
+            C 240 40, 268 50, 292 66
+            C 316 82, 334 106, 340 132
+            C 346 158, 338 184, 322 204
+            C 306 224, 282 238, 255 246
+            C 228 254, 198 256, 170 252
+            C 143 248, 118 238, 98 226
+            C 86 220, 78 218, 72 218 Z
           "
-          fill="#0C0C0C"
-          stroke="#252525"
+          fill="url(#brain-fill)"
+          stroke="#2a2a2a"
           strokeWidth="1.5"
         />
 
-        {/* Temporal lobe bulge */}
+        {/* Temporal lobe — protrudes downward from main brain body */}
         <path
           d="
-            M 78 224
-            C 65 215, 55 200, 52 182
-            C 49 162, 54 142, 64 128
-            C 72 140, 76 158, 78 178
-            C 80 198, 80 212, 78 224 Z
+            M 98 226
+            C 88 232, 80 240, 78 252
+            C 76 264, 84 274, 98 278
+            C 120 282, 150 280, 178 276
+            C 206 272, 232 264, 252 254
+            C 258 251, 260 248, 255 246
+            C 228 254, 198 256, 170 252
+            C 143 248, 118 238, 98 226 Z
           "
-          fill="#0E0E0E"
-          stroke="#222"
-          strokeWidth="1"
+          fill="#101010"
+          stroke="#2a2a2a"
+          strokeWidth="1.5"
         />
 
-        {/* Subtle sulci lines (brain texture) */}
-        <path d="M 112 68 C 130 58, 158 54, 186 58" fill="none" stroke="#1e1e1e" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M 82 92 C 100 80, 128 72, 158 70" fill="none" stroke="#1e1e1e" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M 66 122 C 88 108, 118 100, 152 98" fill="none" stroke="#1e1e1e" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M 200 52 C 228 54, 255 64, 275 80" fill="none" stroke="#1e1e1e" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M 195 78 C 220 76, 248 84, 270 98" fill="none" stroke="#1e1e1e" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M 188 108 C 212 104, 242 110, 268 124" fill="none" stroke="#1e1e1e" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M 150 180 C 175 190, 205 198, 238 196" fill="none" stroke="#1e1e1e" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M 132 212 C 155 218, 185 222, 215 220" fill="none" stroke="#1e1e1e" strokeWidth="1.5" strokeLinecap="round" />
+        {/* Sylvian fissure — the characteristic horizontal groove */}
+        <path d="M 96 218 C 130 204 168 192 210 185 C 248 178 278 172 298 168"
+          fill="none" stroke="#222" strokeWidth="2" strokeLinecap="round" />
+
+        {/* Superior gyri (top of brain) */}
+        <path d="M 130 46 C 158 36 188 34 216 38" fill="none" stroke="#1e1e1e" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M 108 64 C 138 50 170 44 202 46" fill="none" stroke="#1e1e1e" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M 90 86 C 122 68 158 60 192 62" fill="none" stroke="#1e1e1e" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M 238 46 C 265 54 290 68 308 88" fill="none" stroke="#1e1e1e" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M 230 68 C 258 72 284 86 302 108" fill="none" stroke="#1e1e1e" strokeWidth="1.5" strokeLinecap="round" />
+
+        {/* Central sulcus (divides frontal/parietal) */}
+        <path d="M 200 38 C 205 80 208 125 204 168" fill="none" stroke="#1c1c1c" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="4 3" />
+
+        {/* Temporal gyri */}
+        <path d="M 102 238 C 132 248 165 254 198 254" fill="none" stroke="#1a1a1a" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M 120 228 C 148 236 180 240 212 238" fill="none" stroke="#1a1a1a" strokeWidth="1.5" strokeLinecap="round" />
 
         {/* Region spots */}
         {regions.map((region) => (
