@@ -1,234 +1,218 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState, Suspense, useMemo } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { OrbitControls, useGLTF, Html } from '@react-three/drei';
+import * as THREE from 'three';
 import { BrainRegion } from '@/types';
 
-// Anatomical positions in the 380x268 SVG viewBox (side view, left hemisphere)
-// Frontal = left, Occipital = right, Temporal = bottom
-// Positions within 420x280 viewBox — side view, frontal=left, occipital=right
-const REGION_SPOTS: Record<string, { cx: number; cy: number }> = {
-  "Broca's Area":    { cx: 108, cy: 168 },  // inferior frontal, above Sylvian
-  'Auditory Cortex': { cx: 188, cy: 210 },  // superior temporal gyrus
-  'FFA':             { cx: 232, cy: 255 },  // inferior temporal (temporal lobe)
-  'PPA':             { cx: 262, cy: 248 },  // parahippocampal (posterior temporal)
-  'TPJ':             { cx: 278, cy: 158 },  // temporoparietal junction
-  'Visual Cortex':   { cx: 318, cy: 168 },  // occipital lobe
-  'Amygdala':        { cx: 155, cy: 200 },  // medial temporal
+// Approximate 3D positions within the brain model's coordinate space.
+// These will be tuned to the actual model scale after first render.
+const REGION_BLOBS: Record<string, {
+  position: [number, number, number];
+  scale: [number, number, number];
+}> = {
+  "Broca's Area":    { position: [-0.55, 0.05, 0.55],  scale: [0.28, 0.20, 0.22] },
+  'Auditory Cortex': { position: [-0.10, 0.05, 0.62],  scale: [0.32, 0.18, 0.22] },
+  'FFA':             { position: [ 0.20, -0.30, 0.42], scale: [0.24, 0.18, 0.20] },
+  'PPA':             { position: [ 0.35, -0.25, 0.25], scale: [0.22, 0.16, 0.20] },
+  'TPJ':             { position: [ 0.30,  0.20, 0.35], scale: [0.28, 0.20, 0.22] },
+  'Visual Cortex':   { position: [ 0.55,  0.10, -0.10],scale: [0.30, 0.24, 0.28] },
+  'Amygdala':        { position: [-0.15, -0.20, 0.48], scale: [0.18, 0.14, 0.16] },
 };
 
-function getGlowColor(score: number) {
-  if (score >= 75) return { color: '#FF6500', opacity: 1, r: 16 };
-  if (score >= 50) return { color: '#FF6500', opacity: 0.7, r: 13 };
-  if (score >= 25) return { color: '#FF6500', opacity: 0.35, r: 10 };
-  return { color: '#333333', opacity: 0.5, r: 7 };
+function getIntensity(score: number) {
+  if (score >= 75) return 1.0;
+  if (score >= 50) return 0.65;
+  if (score >= 25) return 0.35;
+  return 0;
 }
 
-interface RegionSpotProps {
-  region: BrainRegion;
-  hasResults: boolean;
-}
-
-function RegionSpot({ region, hasResults }: RegionSpotProps) {
+function RegionBlob({ region }: { region: BrainRegion }) {
+  const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
-  const spot = REGION_SPOTS[region.name];
-  if (!spot) return null;
+  const blob = REGION_BLOBS[region.name];
+  if (!blob) return null;
 
-  const { color, opacity, r } = hasResults
-    ? getGlowColor(region.score)
-    : { color: '#2a2a2a', opacity: 1, r: 7 };
+  const intensity = getIntensity(region.score);
+  if (intensity === 0) return null;
 
-  const isActive = hasResults && region.score >= 25;
+  const emissiveColor = new THREE.Color(
+    intensity >= 1.0 ? '#FFB300' : intensity >= 0.65 ? '#FF6500' : '#CC3300'
+  );
+
+  useFrame((_, delta) => {
+    if (meshRef.current) {
+      const mat = meshRef.current.material as THREE.MeshStandardMaterial;
+      // Pulse the emissive intensity
+      mat.emissiveIntensity = intensity * (0.8 + 0.2 * Math.sin(Date.now() * 0.002));
+    }
+  });
 
   return (
-    <g
-      style={{ cursor: 'pointer' }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      {/* Outer glow ring for active regions */}
-      {isActive && (
-        <>
-          <circle
-            cx={spot.cx} cy={spot.cy} r={r + 10}
-            fill="none"
-            stroke={color}
-            strokeWidth="1"
-            opacity={opacity * 0.2}
-            className="glow-pulse"
-          />
-          <circle
-            cx={spot.cx} cy={spot.cy} r={r + 5}
-            fill={color}
-            opacity={opacity * 0.15}
-            className="glow-pulse"
-          />
-        </>
-      )}
+    <group>
+      <mesh
+        ref={meshRef}
+        position={blob.position}
+        scale={blob.scale}
+        onPointerEnter={() => setHovered(true)}
+        onPointerLeave={() => setHovered(false)}
+      >
+        <sphereGeometry args={[1, 24, 24]} />
+        <meshStandardMaterial
+          color={emissiveColor}
+          emissive={emissiveColor}
+          emissiveIntensity={intensity * 0.9}
+          transparent
+          opacity={0.72}
+          roughness={0.3}
+          metalness={0.1}
+          depthWrite={false}
+        />
+      </mesh>
 
-      {/* Core dot */}
-      <circle
-        cx={spot.cx} cy={spot.cy}
-        r={hovered ? r + 3 : r}
-        fill={isActive ? color : '#1e1e1e'}
-        stroke={isActive ? color : '#333'}
-        strokeWidth={isActive ? 0 : 1}
-        opacity={isActive ? opacity : 0.6}
-        style={{ transition: 'all 0.2s ease', filter: isActive ? `drop-shadow(0 0 ${r}px ${color})` : 'none' }}
-        className={isActive ? 'region-enter' : ''}
-      />
+      {/* Outer soft glow halo */}
+      <mesh position={blob.position} scale={[blob.scale[0] * 1.6, blob.scale[1] * 1.6, blob.scale[2] * 1.6]}>
+        <sphereGeometry args={[1, 16, 16]} />
+        <meshStandardMaterial
+          color={emissiveColor}
+          emissive={emissiveColor}
+          emissiveIntensity={intensity * 0.3}
+          transparent
+          opacity={0.18}
+          roughness={1}
+          depthWrite={false}
+          side={THREE.BackSide}
+        />
+      </mesh>
 
-      {/* Score label inside dot for active regions */}
-      {isActive && (
-        <text
-          x={spot.cx} y={spot.cy + 1}
-          textAnchor="middle" dominantBaseline="middle"
-          fill="white" fontSize={r > 12 ? 8 : 7}
-          fontWeight="600" style={{ pointerEvents: 'none' }}
-        >
-          {region.score}
-        </text>
-      )}
-
-      {/* Hover tooltip */}
       {hovered && (
-        <foreignObject
-          x={spot.cx - 105} y={spot.cy - 105}
-          width="210" height="100"
-          style={{ overflow: 'visible', pointerEvents: 'none', zIndex: 100 }}
-        >
-          <div
-            style={{
-              background: '#111',
-              border: '1px solid #2a2a2a',
-              borderRadius: 10,
-              padding: '10px 12px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-            }}
-          >
+        <Html position={blob.position} distanceFactor={3} style={{ pointerEvents: 'none' }}>
+          <div style={{
+            background: '#111',
+            border: '1px solid #2a2a2a',
+            borderRadius: 10,
+            padding: '10px 14px',
+            width: 200,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
+            transform: 'translateX(-50%)',
+          }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ color: '#fff', fontSize: 11, fontWeight: 600 }}>{region.name}</span>
-              {hasResults && (
-                <span style={{ color: '#FF6500', fontSize: 11, fontWeight: 700 }}>{region.score}/100</span>
-              )}
+              <span style={{ color: '#fff', fontSize: 11, fontWeight: 700 }}>{region.name}</span>
+              <span style={{ color: '#FF6500', fontSize: 11, fontWeight: 700 }}>{region.score}</span>
             </div>
-            <p style={{ color: '#555', fontSize: 10, margin: 0 }}>{region.marketing_label}</p>
-            {hasResults && region.description && (
-              <p style={{ color: '#888', fontSize: 10, marginTop: 4, lineHeight: 1.4 }}>
-                {region.description.slice(0, 80)}...
+            <p style={{ color: '#666', fontSize: 10, margin: '0 0 4px' }}>{region.marketing_label}</p>
+            {region.description && (
+              <p style={{ color: '#999', fontSize: 10, margin: 0, lineHeight: 1.4 }}>
+                {region.description.slice(0, 90)}...
               </p>
             )}
           </div>
-        </foreignObject>
+        </Html>
       )}
-    </g>
+    </group>
+  );
+}
+
+function BrainModel({ regions }: { regions: BrainRegion[] }) {
+  const { scene } = useGLTF('/brain_point_cloud.glb');
+  const groupRef = useRef<THREE.Group>(null);
+  const [hovered, setHovered] = useState(false);
+
+  // Apply gray material to all brain meshes
+  useMemo(() => {
+    scene.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh;
+        mesh.material = new THREE.MeshStandardMaterial({
+          color: new THREE.Color('#8a9ba8'),
+          roughness: 0.65,
+          metalness: 0.05,
+          transparent: false,
+        });
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+      }
+    });
+  }, [scene]);
+
+  useFrame((_, delta) => {
+    if (groupRef.current && !hovered) {
+      groupRef.current.rotation.y += delta * 0.08;
+    }
+  });
+
+  return (
+    <group
+      ref={groupRef}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+    >
+      <primitive object={scene} />
+      {regions.map((region) => (
+        <RegionBlob key={region.name} region={region} />
+      ))}
+    </group>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <Html center>
+      <div style={{ color: '#555', fontSize: 12, fontFamily: 'Inter, sans-serif' }}>
+        Loading brain model...
+      </div>
+    </Html>
   );
 }
 
 export default function BrainViewer({ regions, label }: { regions: BrainRegion[]; label?: string }) {
-  const hasResults = regions.length > 0 && regions.some(r => r.score > 0);
-
   return (
-    <div className="relative w-full h-full min-h-[400px] bg-bg flex flex-col items-center justify-center">
+    <div className="relative w-full h-full min-h-[400px] bg-bg">
       {label && (
         <div className="absolute top-4 left-4 z-10 text-xs font-semibold text-text-secondary uppercase tracking-widest bg-surface border border-border px-3 py-1.5 rounded-full">
           {label}
         </div>
       )}
 
-      <svg
-        viewBox="0 0 420 280"
-        style={{ width: '90%', maxWidth: 480, height: 'auto' }}
-        xmlns="http://www.w3.org/2000/svg"
+      <Canvas
+        shadows
+        camera={{ position: [0, 0.5, 3.5], fov: 38 }}
+        style={{ width: '100%', height: '100%' }}
+        gl={{ antialias: true, alpha: true }}
       >
-        <defs>
-          <radialGradient id="brain-fill" cx="45%" cy="45%" r="55%">
-            <stop offset="0%" stopColor="#181818" />
-            <stop offset="100%" stopColor="#0a0a0a" />
-          </radialGradient>
-        </defs>
+        <color attach="background" args={['#000000']} />
 
-        {/* ── Brain silhouette: side view, left hemisphere ──
-            Frontal = LEFT, Occipital = RIGHT, Temporal = BOTTOM PROTRUSION */}
-        <path
-          d="
-            M 72 218
-            C 52 206, 38 184, 36 160
-            C 34 136, 42 110, 58 88
-            C 74 66, 98 50, 126 42
-            C 154 34, 184 32, 212 36
-            C 240 40, 268 50, 292 66
-            C 316 82, 334 106, 340 132
-            C 346 158, 338 184, 322 204
-            C 306 224, 282 238, 255 246
-            C 228 254, 198 256, 170 252
-            C 143 248, 118 238, 98 226
-            C 86 220, 78 218, 72 218 Z
-          "
-          fill="url(#brain-fill)"
-          stroke="#2a2a2a"
-          strokeWidth="1.5"
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[3, 5, 3]} intensity={1.8} color="#ffffff" castShadow />
+        <directionalLight position={[-3, 2, -2]} intensity={0.6} color="#c8d8e8" />
+        <pointLight position={[0, -3, 2]} intensity={0.4} color="#ff6500" />
+
+        <Suspense fallback={<LoadingFallback />}>
+          <BrainModel regions={regions} />
+        </Suspense>
+
+        <OrbitControls
+          enablePan={false}
+          minDistance={2}
+          maxDistance={6}
+          target={[0, 0, 0]}
         />
+      </Canvas>
 
-        {/* Temporal lobe — protrudes downward from main brain body */}
-        <path
-          d="
-            M 98 226
-            C 88 232, 80 240, 78 252
-            C 76 264, 84 274, 98 278
-            C 120 282, 150 280, 178 276
-            C 206 272, 232 264, 252 254
-            C 258 251, 260 248, 255 246
-            C 228 254, 198 256, 170 252
-            C 143 248, 118 238, 98 226 Z
-          "
-          fill="#101010"
-          stroke="#2a2a2a"
-          strokeWidth="1.5"
-        />
-
-        {/* Sylvian fissure — the characteristic horizontal groove */}
-        <path d="M 96 218 C 130 204 168 192 210 185 C 248 178 278 172 298 168"
-          fill="none" stroke="#222" strokeWidth="2" strokeLinecap="round" />
-
-        {/* Superior gyri (top of brain) */}
-        <path d="M 130 46 C 158 36 188 34 216 38" fill="none" stroke="#1e1e1e" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M 108 64 C 138 50 170 44 202 46" fill="none" stroke="#1e1e1e" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M 90 86 C 122 68 158 60 192 62" fill="none" stroke="#1e1e1e" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M 238 46 C 265 54 290 68 308 88" fill="none" stroke="#1e1e1e" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M 230 68 C 258 72 284 86 302 108" fill="none" stroke="#1e1e1e" strokeWidth="1.5" strokeLinecap="round" />
-
-        {/* Central sulcus (divides frontal/parietal) */}
-        <path d="M 200 38 C 205 80 208 125 204 168" fill="none" stroke="#1c1c1c" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="4 3" />
-
-        {/* Temporal gyri */}
-        <path d="M 102 238 C 132 248 165 254 198 254" fill="none" stroke="#1a1a1a" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M 120 228 C 148 236 180 240 212 238" fill="none" stroke="#1a1a1a" strokeWidth="1.5" strokeLinecap="round" />
-
-        {/* Region spots */}
-        {regions.map((region) => (
-          <RegionSpot key={region.name} region={region} hasResults={hasResults} />
-        ))}
-
-        {/* Empty state — dim unscored spots */}
-        {!hasResults && Object.entries(REGION_SPOTS).map(([name, spot]) => (
-          <circle key={name} cx={spot.cx} cy={spot.cy} r={6} fill="#1a1a1a" stroke="#2a2a2a" strokeWidth="1" />
-        ))}
-      </svg>
-
-      {/* Legend */}
-      <div className="flex items-center gap-5 mt-2 text-xs text-text-secondary">
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full" style={{ background: '#333' }} />
-          <span>Low</span>
+      {/* Legend — only show when there are results */}
+      {regions.some(r => r.score > 0) && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-4 text-xs text-text-secondary bg-surface/90 backdrop-blur-sm px-4 py-2 rounded-full border border-border whitespace-nowrap">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-[#CC3300]" /><span>Low</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-[#FF6500]" /><span>Medium</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-[#FFB300]" /><span>High</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full" style={{ background: '#FF6500', opacity: 0.5 }} />
-          <span>Medium</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full" style={{ background: '#FF6500' }} />
-          <span>High</span>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
