@@ -35,7 +35,7 @@ function AppTool() {
     <div className="min-h-screen bg-bg flex flex-col">
       {/* Nav */}
       <nav className="px-8 py-4 flex items-center justify-between border-b border-border">
-        <div className="text-text-primary font-bold text-lg tracking-tight">
+        <div className="font-display text-text-primary font-bold text-lg">
           Brain <span className="text-accent">Trigger</span>
         </div>
         <div className="flex bg-surface border border-border rounded-xl p-0.5">
@@ -160,7 +160,7 @@ function WaitlistPage() {
   return (
     <main className="min-h-screen bg-bg flex flex-col">
       <nav className="px-8 py-5 flex items-center justify-between border-b border-border">
-        <div className="text-text-primary font-bold text-lg tracking-tight">
+        <div className="font-display text-text-primary font-bold text-lg">
           Brain <span className="text-accent">Trigger</span>
         </div>
         <span className="text-xs text-accent bg-accent-dim border border-accent/20 px-3 py-1 rounded-full font-medium">
