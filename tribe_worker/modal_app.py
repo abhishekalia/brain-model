@@ -234,7 +234,7 @@ def _run_inference(model, video_path: str) -> tuple[dict[str, int], str]:
 @app.function(
     gpu="A10G",
     volumes={WEIGHTS_PATH: volume},
-    secrets=[modal.Secret.from_name("huggingface"), modal.Secret.from_name("youtube-cookies")],
+    secrets=[modal.Secret.from_name("huggingface")],
     timeout=1200,
     min_containers=1,
 )
@@ -295,7 +295,7 @@ def analyze_video(youtube_url: str) -> dict:
 @app.function(
     gpu="A10G",
     volumes={WEIGHTS_PATH: volume},
-    secrets=[modal.Secret.from_name("huggingface"), modal.Secret.from_name("youtube-cookies")],
+    secrets=[modal.Secret.from_name("huggingface")],
     timeout=120,
 )
 def verify_hcp_labels() -> list[str]:
@@ -317,7 +317,7 @@ def verify_hcp_labels() -> list[str]:
 @app.function(
     gpu="A100",
     volumes={WEIGHTS_PATH: volume},
-    secrets=[modal.Secret.from_name("huggingface"), modal.Secret.from_name("youtube-cookies")],
+    secrets=[modal.Secret.from_name("huggingface")],
     timeout=1200,
     min_containers=1,
 )
@@ -363,7 +363,7 @@ def analyze_video_file(video_bytes: bytes, title: str = "") -> dict:
 @app.function(
     gpu="A100",
     volumes={WEIGHTS_PATH: volume},
-    secrets=[modal.Secret.from_name("huggingface"), modal.Secret.from_name("youtube-cookies")],
+    secrets=[modal.Secret.from_name("huggingface")],
     timeout=1200,
     min_containers=1,
 )

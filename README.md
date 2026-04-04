@@ -65,12 +65,6 @@ Modal needs two secrets to run the TRIBE v2 worker. Go to [modal.com/secrets](ht
 - Add one key: `HF_TOKEN`
 - Value: your HuggingFace token from [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) (create a read token if you don't have one)
 
-**Secret 2 — YouTube cookies (required but can be empty)**
-- Click **New Secret**
-- Name it exactly: `youtube-cookies`
-- Add one key: `COOKIES`
-- Value: leave it blank
-
 ---
 
 ### Step 4 — Deploy TRIBE v2 to your Modal account
