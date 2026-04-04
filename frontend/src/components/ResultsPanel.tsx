@@ -1,123 +1,124 @@
 'use client';
-import { AnalyzeResponse } from '@/types';
-import Recommendations from './Recommendations';
+import { AnalyzeResponse, BrainRegion, Recommendation } from '@/types';
 
-function ScoreBar({ score }: { score: number }) {
-  const color = score >= 75 ? '#FF6500' : score >= 50 ? 'rgba(255,101,0,0.6)' : '#2a2a2a';
+const COLOR = '#7C3AED';
+
+function scoreLabel(score: number) {
+  if (score >= 75) return { text: 'Strongly activated', dot: '#FFB300' };
+  if (score >= 50) return { text: 'Moderately activated', dot: '#FF6500' };
+  return { text: 'Mildly activated', dot: '#CC3300' };
+}
+
+// Map brain region names to plain-English "what caused this" labels
+const CAUSE_HINTS: Record<string, string> = {
+  "Amygdala": "emotional content or surprise moments in the video",
+  "Auditory Cortex": "the audio — music, voice tone, or sound design",
+  "Broca's Area": "spoken language, narration, or verbal storytelling",
+  "FFA": "faces shown on screen",
+  "PPA": "scenes, environments, or visual backgrounds",
+  "TPJ": "social cues — characters interacting or a sense of perspective-taking",
+  "Visual Cortex": "strong visual movement, colour contrast, or scene changes",
+};
+
+function RegionCard({ region, rec }: { region: BrainRegion; rec?: Recommendation }) {
+  const { text: activation, dot } = scoreLabel(region.score);
+
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 bg-surface rounded-full h-1">
-        <div
-          className="h-1 rounded-full transition-all duration-700"
-          style={{
-            width: `${score}%`,
-            backgroundColor: color,
-            boxShadow: score >= 50 ? `0 0 6px ${color}` : 'none',
-          }}
+    <div
+      className="rounded-2xl border p-4 space-y-3"
+      style={{ background: '#0C0C0C', borderColor: '#1F1F1F' }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full shrink-0" style={{ background: dot, boxShadow: `0 0 6px ${dot}` }} />
+          <span className="text-text-primary text-sm font-semibold">{region.name}</span>
+        </div>
+        <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+          style={{ background: 'rgba(124,58,237,0.12)', color: COLOR, border: `1px solid ${COLOR}33` }}>
+          {region.emotion}
+        </span>
+      </div>
+
+      {/* 4 rows */}
+      <div className="space-y-2 text-xs">
+        <Row label="Triggered" value={activation} />
+        <Row label="Emotion" value={region.marketing_label || region.emotion} />
+        <Row
+          label="Cause"
+          value={CAUSE_HINTS[region.name] ?? region.description?.split('.')[0] ?? '—'}
+        />
+        <Row
+          label="Improve"
+          value={rec?.action ?? defaultImprove(region.name)}
+          highlight
         />
       </div>
-      <span className="text-text-primary text-xs font-medium w-6 text-right">{score}</span>
     </div>
   );
+}
+
+function Row({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className="flex gap-2">
+      <span className="shrink-0 w-14 text-text-secondary">{label}</span>
+      <span style={{ color: highlight ? '#E0D7FF' : '#9999B8' }} className="leading-snug">{value}</span>
+    </div>
+  );
+}
+
+function defaultImprove(name: string): string {
+  const map: Record<string, string> = {
+    "Amygdala": "Add a surprising hook or emotional moment in the first 3 seconds.",
+    "Auditory Cortex": "Use background music or a confident voiceover to boost audio engagement.",
+    "Broca's Area": "Make your narration clearer and more conversational.",
+    "FFA": "Show more human faces — they drive connection and trust.",
+    "PPA": "Use richer, more distinctive visual environments to anchor memory.",
+    "TPJ": "Include moments that put the viewer in someone else's shoes.",
+    "Visual Cortex": "Increase visual variety — more cuts, motion, or colour contrast.",
+  };
+  return map[name] ?? "Consider increasing the sensory richness of this content.";
 }
 
 export default function ResultsPanel({ results }: { results: AnalyzeResponse | null }) {
   if (!results) {
     return (
-      <div className="flex flex-col items-center justify-center h-48 gap-3">
-        <p className="text-text-secondary text-sm text-center">Analyze content to see results</p>
+      <div className="flex flex-col items-center justify-center h-40 gap-2">
+        <p className="text-text-secondary text-xs text-center">Upload a video and hit ANALYSE to see results</p>
       </div>
     );
   }
 
+  // Only show regions that were actually activated
+  const active = results.regions.filter(r => r.score >= 25).sort((a, b) => b.score - a.score);
+
   return (
-    <div className="space-y-3 overflow-y-auto pr-1">
-      {/* About + Score row */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-surface border border-border rounded-2xl p-4 col-span-2">
-          <p className="text-xs font-semibold text-text-secondary uppercase tracking-widest mb-2">About This Content</p>
-          <p className="text-text-primary text-sm leading-relaxed">{results.content_summary}</p>
+    <div className="space-y-3">
+      {/* Score */}
+      <div className="flex items-center justify-between rounded-2xl border px-5 py-4"
+        style={{ background: '#0C0C0C', borderColor: '#1F1F1F' }}>
+        <div>
+          <p className="text-text-primary text-sm font-semibold">Brain Engagement</p>
+          <p className="text-text-secondary text-xs mt-0.5">Overall neurological impact</p>
         </div>
-
-        <div className="bg-surface border border-border rounded-2xl p-4 flex items-center justify-between col-span-2">
-          <div>
-            <p className="text-text-primary font-semibold text-sm">Brain Engagement</p>
-            <p className="text-text-secondary text-xs mt-0.5">Overall neurological impact</p>
-          </div>
-          <div className="text-right">
-            <span className="text-5xl font-bold text-accent">{results.engagement_score}</span>
-            <span className="text-text-secondary text-xs ml-1">/100</span>
-          </div>
+        <div className="flex items-baseline gap-1">
+          <span className="text-4xl font-bold font-display" style={{ color: COLOR }}>{results.engagement_score}</span>
+          <span className="text-text-secondary text-xs">/100</span>
         </div>
       </div>
 
-      {/* What works / needs work */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-surface border border-border rounded-2xl p-4">
-          <div className="flex items-center gap-1.5 mb-3">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-            <span className="text-green-400 text-xs font-semibold">What Works</span>
-          </div>
-          <ul className="space-y-2">
-            {results.what_works.map((item, i) => (
-              <li key={i} className="text-xs text-text-secondary leading-relaxed flex gap-1.5">
-                <span className="text-green-500 shrink-0 mt-0.5">·</span>
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="bg-surface border border-border rounded-2xl p-4">
-          <div className="flex items-center gap-1.5 mb-3">
-            <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-            <span className="text-red-400 text-xs font-semibold">Needs Work</span>
-          </div>
-          <ul className="space-y-2">
-            {results.what_doesnt_work.map((item, i) => (
-              <li key={i} className="text-xs text-text-secondary leading-relaxed flex gap-1.5">
-                <span className="text-red-500 shrink-0 mt-0.5">·</span>
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      {/* Brain regions */}
-      <div className="bg-surface border border-border rounded-2xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-xs font-semibold text-text-secondary uppercase tracking-widest">Brain Regions</p>
-          {results.regions.some(r => r.source === 'tribe_v2') && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-accent-dim text-accent border border-accent/20 font-medium">
-              TRIBE v2 fMRI
-            </span>
-          )}
-        </div>
-        <div className="space-y-4">
-          {results.regions.map((region) => (
-            <div key={region.name}>
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-text-primary text-xs font-semibold">{region.name}</span>
-                  <span className="text-xs px-1.5 py-0.5 rounded text-text-secondary border border-border">{region.emotion}</span>
-                </div>
-                <span
-                  className="text-xs font-medium"
-                  style={{ color: region.score >= 50 ? '#FF6500' : '#555' }}
-                >
-                  {region.score >= 75 ? 'High' : region.score >= 50 ? 'Medium' : 'Low'}
-                </span>
-              </div>
-              <ScoreBar score={region.score} />
-              <p className="text-text-secondary text-xs mt-1.5 leading-relaxed">{region.description}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Recommendations */}
-      <Recommendations recommendations={results.recommendations} />
+      {/* Region cards */}
+      {active.length === 0 ? (
+        <p className="text-text-secondary text-xs text-center py-4">No significant brain activation detected.</p>
+      ) : (
+        active.map(region => (
+          <RegionCard
+            key={region.name}
+            region={region}
+            rec={results.recommendations.find(r => r.region === region.name)}
+          />
+        ))
+      )}
     </div>
   );
 }

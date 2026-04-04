@@ -133,12 +133,12 @@ function AppTool() {
   return (
     <div className="h-screen bg-bg flex flex-col overflow-hidden">
       {/* Nav */}
-      <nav className="shrink-0 px-6 py-3 border-b border-border flex items-center justify-between gap-4">
+      <nav className="relative shrink-0 px-6 py-3 border-b border-border flex items-center justify-between gap-4">
         <div className="font-display font-bold text-base tracking-widest shrink-0" style={{ color: '#E0D7FF' }}>
           BRAIN <span style={{ color: COLOR }}>TRIGGER</span>
         </div>
 
-        <div className="font-display text-xs font-bold tracking-widest" style={{ color: COLOR, letterSpacing: '0.25em' }}>
+        <div className="absolute left-1/2 -translate-x-1/2 font-display text-xs font-bold tracking-widest" style={{ color: COLOR, letterSpacing: '0.25em' }}>
           A/B NEURAL ANALYSIS
         </div>
 
@@ -165,9 +165,9 @@ function AppTool() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                 </svg>
-                {loadingA ? 'ANALYZING A...' : 'ANALYZING B...'}
+                {loadingA ? 'ANALYSING A...' : 'ANALYSING B...'}
               </span>
-            ) : 'ANALYZE BOTH'}
+            ) : 'ANALYSE'}
           </button>
         </div>
       </nav>
