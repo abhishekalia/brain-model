@@ -18,16 +18,47 @@ Brain Trigger uses **TRIBE v2** — Meta FAIR's neural encoding model — to pre
 
 ---
 
-## What you need before starting
+## Prerequisites — install these first
 
-Make sure you have these four things ready. All are free to create.
+Before you do anything else, make sure all of the following are installed on your computer.
 
-| # | Requirement | Where to get it |
-|---|---|---|
-| 1 | **Modal account** | [modal.com](https://modal.com) — pay-per-use GPU (~$0.10–0.30 per analysis) |
-| 2 | **Anthropic API key** | [console.anthropic.com](https://console.anthropic.com) — (~$0.01 per analysis) |
-| 3 | **HuggingFace account + token** | [huggingface.co](https://huggingface.co) — free, needed to download TRIBE v2 weights |
-| 4 | **Docker Desktop** | [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/) — free |
+### 1. Git
+Used to download the project.
+- **Mac:** Already installed. Open Terminal and run `git --version` to confirm.
+- **Windows:** Download from [git-scm.com/download/win](https://git-scm.com/download/win). Run the installer with default settings.
+
+After installing, close and reopen your terminal, then confirm with:
+```
+git --version
+```
+
+### 2. Python 3.10 or higher
+Used to install and run Modal.
+- **Mac:** Download from [python.org/downloads](https://python.org/downloads)
+- **Windows:** Download from [python.org/downloads](https://python.org/downloads). On the first screen of the installer, **check the box that says "Add Python to PATH"** — this is important.
+
+After installing, close and reopen your terminal, then confirm with:
+```
+python --version
+```
+You should see `Python 3.10.x` or higher.
+
+### 3. Docker Desktop
+Used to run the app locally.
+- Download from [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/)
+- Install and launch it. Make sure it's running before Step 6.
+
+---
+
+## Accounts you need
+
+All are free to create.
+
+| # | Account | Where | Cost |
+|---|---|---|---|
+| 1 | **Modal** | [modal.com](https://modal.com) | ~$0.10–0.30 per analysis (GPU) |
+| 2 | **Anthropic** | [console.anthropic.com](https://console.anthropic.com) | ~$0.01 per analysis |
+| 3 | **HuggingFace** | [huggingface.co](https://huggingface.co) | Free |
 
 ---
 
@@ -35,44 +66,48 @@ Make sure you have these four things ready. All are free to create.
 
 ### Step 1 — Clone the repo
 
-Open your terminal and run:
+Open Terminal (Mac) or Command Prompt (Windows) and run:
 
-```bash
+```
 git clone https://github.com/abhishekalia/brain-model.git
 cd brain-model
 ```
+
+> **Windows users:** If you get a `git is not recognized` error, Git is not installed. See Prerequisites above.
 
 ---
 
 ### Step 2 — Install Modal and connect your account
 
-```bash
-pip install modal
-modal setup
+```
+python -m pip install modal
+python -m modal setup
 ```
 
-This opens a browser window. Log in or create a Modal account. Once done your terminal will confirm you're connected.
+> **Note:** Use `python -m pip` and `python -m modal` instead of `pip` and `modal` directly — this avoids PATH issues on Windows.
+
+This opens a browser window. Log in or create a Modal account. Once done, your terminal will confirm you're connected.
 
 ---
 
-### Step 3 — Create secrets in Modal
+### Step 3 — Create a HuggingFace secret in Modal
 
-Modal needs two secrets to run the TRIBE v2 worker. Go to [modal.com/secrets](https://modal.com/secrets) and create both:
-
-**Secret 1 — HuggingFace token**
-- Click **New Secret**
-- Name it exactly: `huggingface`
-- Add one key: `HF_TOKEN`
-- Value: your HuggingFace token from [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) (create a read token if you don't have one)
+1. Go to [modal.com/secrets](https://modal.com/secrets)
+2. Click **New Secret** → select **Custom**
+3. Name it exactly: `huggingface`
+4. Add one key: `HF_TOKEN`
+5. For the value, go to [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens), click **New token**, give it a name, select **Read** permission, and copy the token
+6. Paste the token as the value in Modal
+7. Click **Save**
 
 ---
 
 ### Step 4 — Deploy TRIBE v2 to your Modal account
 
-Back in your terminal, from the root of the project:
+In your terminal, make sure you're inside the `brain-model` folder, then run:
 
-```bash
-modal deploy tribe_worker/modal_app.py
+```
+python -m modal deploy tribe_worker/modal_app.py
 ```
 
 This takes about a minute. When it finishes, Modal prints your personal endpoint URL:
@@ -84,19 +119,23 @@ https://YOUR-USERNAME--brain-trigger-tribe-worker-analyze-video-endpoint.modal.r
 
 **Copy that URL** — you need it in the next step.
 
-> Your endpoint is private to your Modal account. Only requests with your API key can call it.
-
 ---
 
 ### Step 5 — Set up your environment file
 
-```bash
+**Mac:**
+```
 cp .env.example .env
 ```
 
-Open the `.env` file in any text editor and fill in these two lines:
+**Windows:**
+```
+copy .env.example .env
+```
 
-```env
+Then open the `.env` file in any text editor (Notepad is fine) and fill in these two lines:
+
+```
 ANTHROPIC_API_KEY=sk-ant-...
 TRIBE_ENDPOINT_URL=https://YOUR-USERNAME--brain-trigger-...modal.run
 ```
@@ -107,7 +146,9 @@ Save the file.
 
 ### Step 6 — Start the app
 
-```bash
+Make sure Docker Desktop is open and running, then:
+
+```
 docker compose up
 ```
 
@@ -129,9 +170,15 @@ You should see the Brain Trigger UI.
 2. Optionally upload a second video to panel B
 3. Click **ANALYSE**
 
-> **First analysis takes 10–15 minutes.** This is normal. TRIBE v2 needs to download its model weights (~15GB) to Modal's storage on the very first run. Every analysis after that takes 3–5 minutes.
+> **First analysis takes 10–15 minutes.** This is normal. TRIBE v2 needs to download its model weights (~15GB) to Modal's storage on the very first run. Every analysis after that takes 3–5 minutes. You'll see a progress indicator on screen — don't close the tab.
 
-You'll see a progress indicator on screen while it runs. Don't close the tab.
+---
+
+## Stopping the app
+
+```
+docker compose down
+```
 
 ---
 
@@ -139,39 +186,41 @@ You'll see a progress indicator on screen while it runs. Don't close the tab.
 
 If you'd rather not use Docker, you can run each service directly.
 
-**Backend:**
-```bash
+**Backend** (in one terminal tab):
+```
 cd backend
 python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-cp ../.env .env
+source venv/bin/activate
+python -m pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
-**Frontend** (in a new terminal tab):
-```bash
+> **Windows:** replace `source venv/bin/activate` with `venv\Scripts\activate`
+
+**Frontend** (in a second terminal tab):
+```
 cd frontend
 npm install
-NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev
+npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
 ---
 
-## Stopping the app
-
-```bash
-docker compose down
-```
-
----
-
 ## Troubleshooting
 
+**`git is not recognized`**
+Git is not installed. See Prerequisites — install Git and reopen your terminal.
+
+**`python is not recognized`**
+Python is not installed. See Prerequisites — install Python and reopen your terminal. On Windows, make sure you checked "Add Python to PATH" during install.
+
+**`modal is not recognized`**
+Use `python -m modal` instead of `modal` for all commands.
+
 **"Failed to poll job status"**
-Your Modal endpoint URL in `.env` is wrong or the deployment failed. Re-run `modal deploy tribe_worker/modal_app.py` and copy the URL again.
+Your Modal endpoint URL in `.env` is wrong or the deployment failed. Re-run `python -m modal deploy tribe_worker/modal_app.py` and copy the URL again.
 
 **First analysis stuck for 15+ minutes**
 Normal on first run — model weights are downloading (~15GB). Check your [Modal dashboard](https://modal.com) to see the job running.
@@ -180,7 +229,7 @@ Normal on first run — model weights are downloading (~15GB). Check your [Modal
 Your `.env` file is missing or the `TRIBE_ENDPOINT_URL` line is empty. Make sure you created `.env` from `.env.example` and filled it in.
 
 **Docker build fails**
-Make sure Docker Desktop is running before you run `docker compose up`.
+Make sure Docker Desktop is open and running before you run `docker compose up`.
 
 **Port 3000 or 8000 already in use**
 Something else on your machine is using that port. Stop the other process or change the ports in `docker-compose.yml`.
@@ -190,7 +239,7 @@ Something else on your machine is using that port. Stop the other process or cha
 ## Project structure
 
 ```
-brain-trigger/
+brain-model/
 ├── frontend/            # Next.js app — UI, 3D brain viewer, results
 ├── backend/             # FastAPI — job queue, Claude enrichment
 ├── tribe_worker/        # Modal GPU worker — TRIBE v2 inference
@@ -203,14 +252,12 @@ brain-trigger/
 
 ## Cost breakdown
 
-Each analysis uses two paid services:
-
 | Service | Cost per analysis | Notes |
 |---|---|---|
 | Modal (TRIBE v2) | ~$0.10–0.30 | A100 GPU, billed per second |
-| Anthropic (Claude) | ~$0.01 | For enriching scores with explanations |
+| Anthropic (Claude) | ~$0.01 | For plain-English explanations |
 
-Modal has a free credit tier when you first sign up. Anthropic offers $5 free credit for new accounts.
+Modal gives free credits when you first sign up. Anthropic gives $5 free credit for new accounts.
 
 ---
 
