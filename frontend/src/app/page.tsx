@@ -26,9 +26,9 @@ function VideoPanel({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Brain viewer */}
-      <div className="relative" style={{ height: '55%' }}>
+    <div className="flex flex-col h-full overflow-y-auto">
+      {/* Brain viewer — fixed height */}
+      <div className="relative shrink-0" style={{ height: 300 }}>
         <div
           className="absolute top-3 left-3 z-10 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-display"
           style={{ backgroundColor: COLOR, boxShadow: GLOW }}
@@ -46,10 +46,10 @@ function VideoPanel({
         <BrainViewer regions={results?.regions ?? []} />
       </div>
 
-      {/* Upload + Results */}
-      <div className="flex flex-col border-t" style={{ height: '45%', borderColor: `${COLOR}33` }}>
+      {/* Upload + Results — scrolls with the panel */}
+      <div className="flex flex-col border-t shrink-0" style={{ borderColor: `${COLOR}33` }}>
         {/* File picker row */}
-        <div className="px-4 py-3 border-b border-border shrink-0">
+        <div className="px-4 py-3 border-b border-border">
           <div
             onClick={() => fileInputRef.current?.click()}
             className="flex items-center gap-3 rounded-xl px-4 py-3 cursor-pointer transition-all border"
@@ -74,12 +74,12 @@ function VideoPanel({
         </div>
 
         {error && (
-          <div className="mx-4 mt-2 shrink-0 p-2 rounded-lg text-xs text-red-400 border border-red-900/40 bg-red-900/10">
+          <div className="mx-4 mt-2 p-2 rounded-lg text-xs text-red-400 border border-red-900/40 bg-red-900/10">
             {error}
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto px-4 py-3">
+        <div className="px-4 py-3">
           <ResultsPanel results={results} />
         </div>
       </div>

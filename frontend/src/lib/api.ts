@@ -43,8 +43,19 @@ export async function analyzeVideoFile(
   while (Date.now() - start < MAX_WAIT) {
     await new Promise((r) => setTimeout(r, POLL_INTERVAL));
 
-    const pollRes = await fetch(`${API_URL}/api/analyze-video/${job_id}`);
-    if (!pollRes.ok) throw new Error('Failed to poll job status');
+    let pollRes: Response;
+    try {
+      pollRes = await fetch(`${API_URL}/api/analyze-video/${job_id}`);
+    } catch (networkErr) {
+      // Transient network error — keep polling
+      onProgress?.(`Waiting for results... ${Math.round((Date.now() - start) / 1000)}s`);
+      continue;
+    }
+    if (!pollRes.ok) {
+      let detail = `HTTP ${pollRes.status}`;
+      try { const e = await pollRes.json(); detail = e.detail || detail; } catch {}
+      throw new Error(`Failed to poll job status: ${detail}`);
+    }
     const job = await pollRes.json();
 
     if (job.status === 'done') return job.result as AnalyzeResponse;

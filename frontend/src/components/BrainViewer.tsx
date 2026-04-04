@@ -189,7 +189,7 @@ function LoadingFallback() {
 
 export default function BrainViewer({ regions, label }: { regions: BrainRegion[]; label?: string }) {
   return (
-    <div className="relative w-full h-full min-h-[400px] bg-bg">
+    <div className="relative w-full h-full bg-bg">
       {label && (
         <div className="absolute top-4 left-4 z-10 text-xs font-semibold text-text-secondary uppercase tracking-widest bg-surface border border-border px-3 py-1.5 rounded-full">
           {label}
