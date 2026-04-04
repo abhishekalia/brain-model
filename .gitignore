@@ -1,6 +1,7 @@
-# Environment
+# Environment — never commit real credentials
 .env
 *.env
+!.env.example
 
 # Python
 __pycache__/
@@ -8,11 +9,17 @@ __pycache__/
 *.pyo
 .venv/
 venv/
+*.egg-info/
 
 # Node
 node_modules/
 .next/
 out/
 
-# Misc
+# macOS
 .DS_Store
+
+# Large model files
+*.bin
+*.safetensors
+Rotten Brain.glb
