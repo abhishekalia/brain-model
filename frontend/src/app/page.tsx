@@ -172,6 +172,45 @@ function AppTool() {
         </div>
       </nav>
 
+      {/* Winner banner */}
+      {resultsA && resultsB && !isRunning && (() => {
+        const scoreA = resultsA.engagement_score;
+        const scoreB = resultsB.engagement_score;
+        const diff = Math.abs(scoreA - scoreB);
+        const tie = diff <= 3;
+        const winner = tie ? null : scoreA > scoreB ? 'A' : 'B';
+        const winnerScore = winner === 'A' ? scoreA : scoreB;
+        const loserScore = winner === 'A' ? scoreB : scoreA;
+        return (
+          <div className="shrink-0 px-6 py-2.5 flex items-center justify-center gap-4 border-b"
+            style={{ background: 'rgba(124,58,237,0.08)', borderColor: `${COLOR}33` }}>
+            {tie ? (
+              <>
+                <span className="font-display text-xs font-bold tracking-widest" style={{ color: COLOR }}>TIE</span>
+                <span className="text-text-secondary text-xs">Both videos scored within 3 points — too close to call</span>
+              </>
+            ) : (
+              <>
+                <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold font-display shrink-0"
+                  style={{ backgroundColor: COLOR, boxShadow: GLOW }}>
+                  {winner}
+                </div>
+                <span className="font-display text-xs font-bold tracking-widest" style={{ color: '#E0D7FF' }}>
+                  VIDEO {winner} WINS
+                </span>
+                <span className="text-text-secondary text-xs">
+                  Brain engagement {winnerScore} vs {loserScore} — {diff} point{diff !== 1 ? 's' : ''} stronger neurological response
+                </span>
+                <span className="font-display text-xs px-3 py-1 rounded-full font-bold"
+                  style={{ background: 'rgba(124,58,237,0.15)', color: COLOR, border: `1px solid ${COLOR}44` }}>
+                  +{diff} pts
+                </span>
+              </>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Panels */}
       <div className="flex flex-1 min-h-0">
         <div className="flex-1 min-w-0 border-r" style={{ borderColor: `${COLOR}22` }}>
